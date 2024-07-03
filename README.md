@@ -20,8 +20,8 @@ First public version. This program is not yet user friendly and does not save an
 
 ### Launch with:
 - gtbeep.py: For Python users  
-- **GT7ShiftTone.vbs**: to launch the application (Preferred, requires ZIP download)  
-- **GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)
+- ~~**GT7ShiftTone.vbs**: to launch the application (Preferred, requires ZIP download)~~  
+- ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
 - Initial release converted from ForzaShiftTone
@@ -75,6 +75,6 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761 then th
 - Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 50 or 100 RPM.
 - The data is smoothed and will not 100% match the ingame curve which is linear interpolation between points
 - Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example)
-- The default values are arbitrarily chosen and may not suit individual cars or track surface.
+- The default values are arbitrarily chosen and may not suit individual cars or track surface: so far, shifts appear to be too early.
 - Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run.
 - Linux support is untested
