@@ -22,7 +22,7 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 
 from utility import round_to
 
-#given a curve (class with rpm and power numpy arrays at minimum):
+# given a curve (class with rpm and power numpy arrays at minimum):
 # draw a power graph with respected revlimit based revlimit_percent and
 # underfill based on power equal or higher than power_percentile
 # extra arguments are passed to the created figure if fig is None
@@ -42,12 +42,13 @@ class PowerGraph():
         revlimit = round_rpm(curve.rpm[-1])
         curve_filter = curve.rpm <= revlimit_percent*revlimit
         rpm = curve.rpm[curve_filter]
-        power = curve.power[curve_filter] / 1000 #W -> kW
+        power = curve.power[curve_filter]
+        power = power / max(power) * 100 #convert to percentage
 
         ax.plot(rpm, power)
         ax.grid()
         ax.set_xlabel("rpm")#, labelpad=-10)
-        ax.set_ylabel("power (kW)")
+        ax.set_ylabel("power (% of peak)")
 
         #get axis limits to force limits later, annotating moves some of these
         xmin, xmax = ax.get_xlim()
@@ -111,7 +112,6 @@ class PowerGraph():
             y_upperlimit = ymin + 0.05 * (peak_power - ymin)
             ax.annotate(upper_limit, (upper_limit, y_upperlimit),
                         verticalalignment='bottom',horizontalalignment='right')
-
 
         #draw the percentage of peak power the underfill covers
         #nudge percentile upwards, drop ratio a little relative to ymid
