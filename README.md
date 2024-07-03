@@ -3,6 +3,8 @@ It beeps, you shift.
 
 **Windows GUI application to provide a shift tone for Gran Turismo 7.**
 
+![example v0.78 Subaru WRX STi 2014](images/GUIandPower.png)
+
 ## Steps
 - One time: Enter your PS5 IP into the UI then hit Start
 - Load into Special Route X, drive to the part just after the start/finish tunnel before the uphill
@@ -17,9 +19,9 @@ It beeps, you shift.
 First public version. This program is not yet user friendly and does not save any car data yet.
 
 ### Launch with:
-- gtbeep.py: For Python users
-- **GT7ShiftTone.vbs**: to launch the application (Preferred)  
-- **GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information
+- gtbeep.py: For Python users  
+- **GT7ShiftTone.vbs**: to launch the application (Preferred, requires ZIP download)  
+- **GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)
 
 Changes:  
 - Initial release converted from ForzaShiftTone
@@ -30,8 +32,8 @@ The Tone Offset is dynamic. The program keeps track of the time between a shift 
 There are three triggers:
 - Shift RPM: The RPM value at which power in the current gear becomes lower than the power in the next gear: the ideal time to upshift. If the application predicts shift RPM is reached in the defined tone offset time, trigger a beep
 - Percentage of revlimit: Uses the tone offset distance as predicted distance to current RPM hitting the listed percentage of rev limit
-  - Example: A rev limit of 7500 and a value of 98.0% triggers a beep if it predicts 7350 RPM will be reached in 283 milliseconds
-- Time distance to revlimit: uses the tone offset value plus the revlimit ms value as predicted distance to current RPM hitting the defined revlimit. Defaults to 100 milliseconds, which leads to a prediction distance of 383ms
+  - Example: A rev limit of 7500 and a value of 98.0% triggers a tone if it predicts 7350 RPM will be reached in 283 milliseconds
+- Time distance to revlimit: uses the tone offset value plus the revlimit ms value as predicted distance to current RPM hitting the defined revlimit. Defaults to 100 milliseconds, which leads to a default prediction distance of 383ms
 
 The delay between beep triggers is currently set to 0.5 seconds. This time-out is shared between the three triggers.  
 If you choose to not shift and remain above the trigger RPM, the program will not beep again even if revlimit is hit.
@@ -53,7 +55,7 @@ There is one packet per 16.667 milliseconds, approximately.
 - Target: The derived shift RPM value.  
 This requires a power curve and the ratio of the current gear and the next gear to be determined (green background)
 - Rel. Ratio: The relative ratio of the gear ratios between two consecutive gears.  
-If gear 1 has a drivetrain ratio of 15 and gear 2 has a drivetrain ratio of 11 then the relative ratio is 15/11 = 1.36 approximately
+If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761 then the relative ratio is 2.375/1.761 = 1.35 approximately: third gear is 35% longer than second gear.
 
 ### General configuration:
 
@@ -73,4 +75,6 @@ If gear 1 has a drivetrain ratio of 15 and gear 2 has a drivetrain ratio of 11 t
 - Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 50 or 100 RPM.
 - The data is smoothed and will not 100% match the ingame curve which is linear interpolation between points
 - Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example)
-- The default values are arbitrarily chosen and may not suit individual cars or track surface. 
+- The default values are arbitrarily chosen and may not suit individual cars or track surface.
+- Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run.
+- Linux support is untested
