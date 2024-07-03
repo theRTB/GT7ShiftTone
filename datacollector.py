@@ -1,0 +1,386 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 18 21:26:19 2024
+
+@author: RTB
+"""
+import numpy as np
+from numpy.polynomial import Polynomial
+# from curve import Curve
+
+#From: https://stackoverflow.com/questions/20618804/how-to-smooth-a-curve-for-a-dataset
+#renamed to rolling_avg instead of smooth
+#Apply a rolling average of box_pts points
+#this will cause the first and last box_pts//2 points to be inaccurate
+#if mode 'same' is used
+def rolling_avg(y, box_pts, mode='valid'):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode=mode)
+    return y_smooth
+
+#initial rolling average of 3 points is to correct unusual behavior from for
+#example the Bugatti VGT where the data points oscillate every other point
+#TODO: implement bounds: at the moment only dragrun lower bound works
+def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None), 
+                accelrun_bounds=(0, None), smoothing='multi_rolling', 
+                accelrun_smooth=[3,21], sort_rpm=True):
+    # global rpm_shape, torque_shape, power_shape
+    # if accelrun_bounds[1] is None:
+    #      accelrun_bounds[1] = len(accelrun.v) 
+    # if dragrun_bounds[1] is None:
+    #     dragrun_bounds[1] = len(dragrun.v) 
+    # self.dragrun.modify(box_pts=1, overflow=0)
+    if smoothing == 'rolling':
+        accelrun.rolling_avg(box_pts=accelrun_smooth)
+    if smoothing == 'multi_rolling':
+        accelrun.multi_rolling_avg(box_pts_array=accelrun_smooth)
+    elif smoothing == 'lowpass':
+        accelrun.low_pass_filter(bandlimit=accelrun_smooth)
+        
+    dragP = Polynomial.fit(dragrun.v[dragrun_bounds[0]:], 
+                           dragrun.a[dragrun_bounds[0]:], deg=[1,2], 
+                           domain=[0, max(accelrun.v)], 
+                           window=[0, max(accelrun.v)])
+    
+    torque_shape = accelrun.a - dragP(accelrun.v)
+    rpm_shape = sorted(accelrun.rpm) if sort_rpm else accelrun.rpm
+    power_shape = torque_shape * rpm_shape
+    
+    return np.array(rpm_shape), torque_shape, power_shape
+
+class PowerCurve():
+    def __init__(self, *args, **kwargs):
+        result = np_drag_fit(*args, **kwargs)
+        self.rpm, self.torque, self.power = result
+        
+    #get peak power according to peak power rounded to 0.1kW
+    #the rounding is necessary to avoid some randomness in collecting a curve
+    def get_peakpower_tuple(self, decimals=-2):
+        power_rounded = np.round(self.power, decimals) #100W -> 0.1kW accuracy
+        index = np.argmax(power_rounded)
+        return (self.rpm[index], max(power_rounded))
+    
+    def get_revlimit(self):
+        return self.rpm[-1]
+    
+    #TODO: linear interpolation and possibly extrapolation
+    def torque_at_rpm(self, target_rpm):
+        i = np.argmin(np.abs(self.rpm - target_rpm))
+        return self.torque[i]
+
+#can be initialized from a Curve or an array of GTDataPacket
+class Curve ():
+    def __init__(self, packets):
+        if type(packets) == list:
+            packets = sorted(packets, key=lambda p: p.packet_id)
+            if len(packets) != packets[-1].packet_id - packets[0].packet_id +1:
+                print("Curve warning: missing packets")
+            self.gear = packets[0].gear
+            self.props = packets[0].get_props()
+        else:
+            self.gear = packets.gear
+            self.props = packets.get_props() 
+
+        for prop in self.props:
+            array = np.array([getattr(p, prop) for p in packets])
+            setattr(self, prop, array)
+        
+        #aliases
+        # self.rpm = self.current_current_engine_rpm #FM8
+
+    def get_props(self):
+        return self.props  
+
+#Expands on the packet array of Curve by adding a velocity, accel and rpm array
+#only these arrays are 
+#overflow in the case of a dragrun, which has OVERFLOW points past revlimit
+#overflow currently non-functional, don't use
+#box_pts 1 = no smoothing
+class VTACurve(Curve):
+    TICRATE = 60 #hardcoded tic rate of 60. This holds for most games.
+    def __init__(self, packets, overflow=0, box_pts=1):
+        super().__init__(packets)
+        self.overflow = overflow
+
+        if overflow > 0:
+            print("WARNING: OVERFLOW NOT WORKING ATM")
+            
+        self.revlimit = max(self.current_engine_rpm) #TODO: add rounding?
+
+        #initialize rpm v t and a variables without smoothing
+        self.rolling_avg(box_pts)
+    
+    #box_pts must be uneven
+    def rolling_avg(self, box_pts):
+        self.multi_rolling_avg([box_pts])
+
+    #resets v and rpm to default then applies the rolling averages
+    def multi_rolling_avg(self, box_pts_array):
+        self.v = self.speed.copy()
+        self.rpm = self.current_engine_rpm.copy()
+        self.time_id = np.array(self.packet_id) - self.packet_id[0]
+        for box_pts in box_pts_array:
+            self._rolling_avg(box_pts)
+        
+        self.derive_ta()
+    
+    def _rolling_avg(self, box_pts):
+        if box_pts % 2 == 0:
+            print(f'rolling_avg box_pts {box_pts} not uneven, adding one')
+            box_pts += 1
+        cutoff = box_pts//2
+        
+        start = cutoff
+        end = len(self.v)-max(cutoff, self.overflow)
+        self.rpm = self.rpm[start:end]
+        self.time_id = self.time_id[start:end]
+        self.v = rolling_avg(self.v, box_pts)
+        
+    #derive acceleration from v using the packet numbers as time base
+    def derive_ta(self):
+        self.t = self.time_id / 60
+        # self.t2 = np.linspace(0, (len(self.v)-1)/60, len(self.v))
+        self.a = np.gradient(self.v, self.t)
+            
+    # #assumes the signal is cyclical, this does generally not work well
+    # def low_pass_filter(self, bandlimit):
+    #     cutoff = math.ceil(self.TICRATE / bandlimit)
+        
+    #     start = cutoff
+    #     end = len(self.speed)-max(cutoff, self.overflow)
+        
+    #     #derive acceleration from speed
+    #     self.t = np.linspace(0, (len(self.speed)-1)/self.TICRATE, 
+    #                           len(self.speed))
+    #     self.a = low_pass_filter(np.gradient(self.speed, self.t), bandlimit, 
+    #                               self.TICRATE)[start:end]
+    #     self.v = self.speed.copy()[start:end]
+    #     self.rpm = self.current_engine_rpm.copy()[start:end]
+
+class GTDragCollector():
+    def __init__(self):
+        self.run = []
+        self.state = 'WAIT'
+        self.prev_rpm = -1
+        self.gear_collected = -1
+        
+        self.min_duration = 5 #seconds
+        
+    def update(self, gtdp):
+        if self.state == 'WAIT':
+            if (gtdp.clutch == 1.0 and self.prev_rpm > gtdp.current_engine_rpm 
+                    and gtdp.throttle == 0 and gtdp.brake == 0 
+                    and not gtdp.handbrake):
+                self.state = 'RUN'
+                self.gear_collected = gtdp.gear
+                print("Collecting drag!")
+
+        if self.state == 'RUN':
+          #  print(f"RUN {gtdp.current_current_engine_rpm}, {gtdp.power} {gtdp.accel}")
+            if gtdp.handbrake or gtdp.brake > 0:
+                print("RUN RESET HANDBRAKE/BRAKE")
+                self.reset() #back to WAIT
+            elif gtdp.clutch < 1 or gtdp.throttle > 1:
+                print(f"RUN STOP {gtdp.clutch} or {gtdp.throttle}")
+                self.state = 'TEST'
+            else:
+                self.run.append(gtdp)
+
+        if self.state == 'TEST':
+            if len(self.run) < self.min_duration*60:
+                print(f'RUN RESET UNDER {self.min_duration} seconds')
+                self.reset()
+            else:
+                self.state = 'PRINT'
+
+        if self.state == 'PRINT':
+            print("Dragrun done!")
+            self.state = 'DONE'
+
+        self.prev_rpm = gtdp.current_engine_rpm
+
+    def is_run_completed(self):
+        return self.state == 'DONE'
+
+    def get_run(self):
+        return self.run
+    
+    #TODO: add more requirements to a locked run
+    #minimum rpm: 2x idle rpm or so?
+    def is_run_final(self):
+        if len(self.run) > self.MINLEN_LOCK:
+            print(f"Runcollector: Run is final, len {len(self.run)/60:.1f}s")
+            return True
+        return False
+
+    def set_run_final(self):
+        self.state = 'FINAL'
+
+    def reset(self):
+        self.run = []
+        self.state = 'WAIT'
+        self.prev_rpm = -1
+        self.gear_collected = -1
+
+#collects an array of packets at full throttle
+#if the user lets go of throttle, changes gear: reset
+#revlimit is confirmed by: the initial run, then x packets with negative power,
+#   then a packet with positive power. All at 100% throttle
+class GTAccelCollector():
+    MINLEN = 90
+    OVERFLOW = 20 #return x points after peak rpm in curve
+    
+    def __init__(self, keep_overflow=True):
+        self.run = []
+        self.state = 'WAIT'
+        self.prev_rpm = -1
+        self.peak_rpm = -1
+        self.gear_collected = -1
+        self.revlimit_counter = 0
+        
+        self.keep_overflow = keep_overflow
+
+    def update(self, gtdp):
+        if self.state == 'WAIT':
+            if (gtdp.throttle == 255 and gtdp.cars_on_track 
+                    and self.prev_rpm < gtdp.current_engine_rpm):
+                self.state = 'RUN'
+                self.gear_collected = gtdp.gear
+                print("Collecting accel!")
+
+        if self.state == 'RUN':
+            # print(f"RUN {gtdp.current_engine_rpm}")
+            if gtdp.throttle < 255:
+                # print("RUN RESET")
+                self.reset() #back to WAIT
+            elif gtdp.current_engine_rpm < self.prev_rpm:
+                self.state = 'MAYBE_REVLIMIT'
+            else:
+                self.run.append(gtdp)
+        
+        if self.state == 'MAYBE_REVLIMIT':
+            # print(f"MAYBE REVLIMIT {gtdp.current_engine_rpm}")
+            if gtdp.throttle < 255:
+                self.reset()
+            elif gtdp.current_engine_rpm <= self.peak_rpm:
+                self.revlimit_counter += 1
+                self.run.append(gtdp)
+            else:
+                self.state = 'RUN'
+                self.revlimit_counter = 0
+                self.run.append(gtdp)
+            if self.revlimit_counter >= self.OVERFLOW:
+                self.state = 'TEST'
+                if not self.keep_overflow:
+                    self.run = self.run[0:-self.OVERFLOW]
+    
+        if self.state == 'TEST':
+            # print("TEST")
+            if len(self.run) < self.MINLEN:
+                print(f"TEST FAILS MINLEN TEST: {len(self.run)} vs {self.MINLEN}")
+                self.reset()
+            elif self.peak_rpm < gtdp.upshift_rpm:
+                print("TEST PEAK BELOW UPSHIFT RPM")
+                self.reset()
+            else:
+                self.state = 'DONE'
+                print("Accelrun done!")
+
+        self.prev_rpm = gtdp.current_engine_rpm
+        self.peak_rpm = max(self.peak_rpm, gtdp.current_engine_rpm)
+
+    def is_run_completed(self):
+        return self.state == 'DONE'
+
+    def get_revlimit_if_done(self):
+        if self.state != 'DONE':
+            return None
+        return self.run[-1].current_engine_rpm
+    
+    def get_run(self):
+        return self.run
+
+    def reset(self):
+        self.run = []
+        self.state = 'WAIT'
+        self.prev_rpm = -1
+        self.peak_rpm = -1
+        self.gear_collected = -1
+        self.revlimit_counter = 0
+    
+class DataCollector():
+    def __init__(self, keep_overflow=False, *args, **kwargs):
+        self.runcollector = GTAccelCollector(keep_overflow=keep_overflow)
+        self.dragcollector = GTDragCollector()
+        
+        self.accelrun = None
+        self.dragrun = None    
+
+    def loop_dragcollector(self, gtdp):
+        self.dragcollector.update(gtdp)
+    
+        if not self.dragcollector.is_run_completed():
+            return
+        
+        if self.dragrun is None:
+            self.dragrun = VTACurve(self.dragcollector.get_run())
+            print("Drag curve collected!")
+    
+            # self.dragcollector.reset()
+        
+    def loop_runcollector(self, gtdp):
+        self.runcollector.update(gtdp)
+    
+        if not self.runcollector.is_run_completed():
+            return
+        
+        if self.accelrun is None:
+            self.accelrun = VTACurve(self.runcollector.get_run())
+            print("Accel curve collected!")
+    
+            # self.runcollector.reset()
+
+    def is_run_completed(self):
+        return (self.accelrun is not None and self.dragrun is not None)
+    
+    def update(self, gtdp):
+        self.loop_runcollector(gtdp)
+        self.loop_dragcollector(gtdp)
+    
+    def reset(self):
+        self.runcollector.reset()
+        self.dragcollector.reset()
+        
+        self.accelrun = None
+        self.dragrun = None  
+    
+    def get_curve(self):
+        return PowerCurve(self.accelrun, self.dragrun)
+             
+    # #in case we run the DataCollector on its own
+    # def start(self):
+    #     self.loop = GTUDPLoop(target_ip=PS5_IP, 
+    #                           loop_func=self.loop_func)
+    #     self.loop.toggle(True)
+        
+    # def finish(self):
+    #     if self.accelrun is not None and self.dragrun is not None:
+    #         shape = np_drag_fit(self.accelrun, self.dragrun)
+    #         rpm_shape, torque_shape, power_shape = shape
+    #         self.rpm_shape = rpm_shape
+    #         self.torque_shape = torque_shape
+    #         self.power_shape = power_shape
+    #         #TODO: do something with these
+
+    # def quitter(self, gtdp):
+    #     # if ((hasattr(dp, 'handbrake') and dp.handbrake > 0) or 
+    #     #     (hasattr(dp, 'handbrake') and dp.handbrake > 0)):
+    #     if self.accelrun is not None and self.dragrun is not None:
+    #         self.loop.close()
+    #         print("We quit!")
+            
+    # #in case we run the DataCollector on its own
+    # def loop_func(self, gtdp):
+    #     self.loop_runcollector(gtdp)
+    #     self.loop_dragcollector(gtdp)
+    #     self.quitter(gtdp)
