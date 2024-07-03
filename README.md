@@ -28,6 +28,10 @@ Changes:
 
 ## Implementation
 
+The approach is to get consecutive points of acceleration values across a large range of RPMs up to revlimit. These acceleration values will include the acceleration from engine torque minus various resistive forces.  
+We derive drag by letting the car coast with the clutch engaged and working out what the negative acceleration is based on speed. We add this back to the acceleration curve to cancel out the drag and this gives us the basic torque curve.  
+We ignore other sources of losses such as rolling resistance as drag is dominant at higher speeds: The resulting curve is close enough.
+
 The Tone Offset is dynamic. The program keeps track of the time between a shift tone and an initiated shift, and modifies the running Tone Offset if the tone is early or late.
 There are three triggers:
 - Shift RPM: The RPM value at which power in the current gear becomes lower than the power in the next gear: the ideal time to upshift. If the application predicts shift RPM is reached in the defined tone offset time, trigger a beep
