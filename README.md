@@ -7,10 +7,10 @@ It beeps, you shift.
 
 ## Steps
 - One time: Enter your PS5 IP into the UI then hit Start
-- Load into Special Route X, drive to the part just after the start/finish tunnel before the uphill
+- Load into Special Route X Time Trial, drive until past the first tunnel
 - Straighten the car, apply full throttle in a gear that goes from low/medium RPM to revlimit in a few seconds
 - The moment revlimit is hit, briefly press handbrake to initiate the clutch
-- Let the car roll for several seconds to 15 seconds (before the uphill)
+- Let the car roll for several seconds to 10 seconds (finish before the uphill section)
   - Avoid steering inputs as much as possible, controller is preferable
 - Press throttle to finish. You can now go to other races with a shift beep.
 - Be aware that false positives exist: not every beep is an upshift.
