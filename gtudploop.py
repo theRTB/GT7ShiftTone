@@ -11,6 +11,11 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from gtdatapacket import GTDataPacket
 
 #TODO: use ipaddress library for target_ip
+#Class to manage the incoming/outgoing packet stream from/to the PS5
+#loop_func is called for each consecutive received packet
+#Default socket timeout is 15 seconds, this seems to delay exiting any program
+#TODO: Consider setting timeout to 0 seconds before exiting?
+#Sends a heartbeat every 10 seconds
 class GTUDPLoop():
     RECV_PORT = 33740
     HEARTBEAT_PORT = 33739
@@ -35,6 +40,9 @@ class GTUDPLoop():
             sock.bind(('', self.RECV_PORT))
         return sock
     
+    #Toggles the packet loop with a logical 'xor' on boolean toggle
+    #If toggle is false: loop will be stopped if it is running
+    #if toggle is true: loop will be started if it is not running
     def toggle(self, toggle=None):
         if toggle and not self.isRunning:
             def starting():
@@ -68,6 +76,11 @@ class GTUDPLoop():
             print(e)
         print("gtdp_loop ended")
 
+    def send_heartbeat(self):
+        address = (self.target_ip, self.HEARTBEAT_PORT)
+        self.socket.sendto(self.HEARTBEAT_CONTENT, address)
+        print("Heartbeat sent")
+
     def maintain_heartbeat(self):
         try:
             if self.isRunning:
@@ -76,11 +89,6 @@ class GTUDPLoop():
                 self.t.start()
         except BaseException as e:
             print(e)
-    
-    def send_heartbeat(self):
-        address = (self.target_ip, self.HEARTBEAT_PORT)
-        self.socket.sendto(self.HEARTBEAT_CONTENT, address)
-        print("Heartbeat sent")
 
     def set_target_ip(self, target_ip):
         self.target_ip = target_ip

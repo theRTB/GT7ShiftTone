@@ -291,7 +291,7 @@ class GTBeep():
     def loop_test_for_shiftrpm(self, gtdp):
         #case gear is the same in new gtdp or we start from zero
         if (len(self.shiftdelay_deque) == 0 or 
-            self.shiftdelay_deque[0].gear == gtdp.gear):
+                                   self.shiftdelay_deque[0].gear == gtdp.gear):
             self.shiftdelay_deque.appendleft(gtdp)
             self.tone_offset.increment_counter()
             return

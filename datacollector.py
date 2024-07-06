@@ -48,6 +48,10 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
     
     return np.array(rpm_shape), torque_shape, power_shape
 
+#poorly named: does not extend Curve
+#Given an array of consecutive rpm/accel points at full throttle and an array 
+#of consecutive accel points with the clutch disengaged we can derive a torque
+#curve and thus a power curve.
 class PowerCurve():
     def __init__(self, *args, **kwargs):
         result = np_drag_fit(*args, **kwargs)
@@ -92,10 +96,15 @@ class Curve ():
         return self.props  
 
 #Expands on the packet array of Curve by adding a velocity, accel and rpm array
-#only these arrays are 
+#Class provides a box_pts variable which applies a rolling average to only
+#these arrays. (multi)_rolling_avg can be called to re-apply a different 
+#rolling average, or array of consecutively applied rolling averages
+#Reason for consecutive is that some cars oscillate heavily every other packet
+#Such as the Bugatti VGT. The only way to smooth these is to start with a 
+#rolling average of 3.
 #overflow in the case of a dragrun, which has OVERFLOW points past revlimit
 #overflow currently non-functional, don't use
-#box_pts 1 = no smoothing
+#box_pts 1 = no smoothing of v, t and a arrays
 class VTACurve(Curve):
     TICRATE = 60 #hardcoded tic rate of 60. This holds for most games.
     def __init__(self, packets, overflow=0, box_pts=1):
