@@ -79,7 +79,7 @@ def multi_beep(filename=config.sound_file, duration=0.1, count=2, delay=0.1):
         t.start()
 
 
-
+#Only necessary for Forza series
 import math
 #drivetrain enum for fdp
 DRIVETRAIN_FWD = 0
@@ -132,6 +132,52 @@ def calculate_shiftrpm(rpm, power, relratio):
         print("Warning: multiple intersects found: graph may be noisy")
 
     return shiftrpm
+
+
+
+import numpy as np
+from numpy.polynomial import Polynomial
+# from curve import Curve
+
+#From: https://stackoverflow.com/questions/20618804/how-to-smooth-a-curve-for-a-dataset
+#renamed to rolling_avg instead of smooth
+#Apply a rolling average of box_pts points
+#this will cause the first and last box_pts//2 points to be inaccurate
+#if mode 'same' is used
+def rolling_avg(y, box_pts, mode='valid'):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode=mode)
+    return y_smooth
+
+#initial rolling average of 3 points is to correct unusual behavior from for
+#example the Bugatti VGT where the data points oscillate every other point
+#TODO: implement bounds: at the moment only dragrun lower bound works
+def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None), 
+                accelrun_bounds=(0, None), smoothing='multi_rolling', 
+                accelrun_smooth=[3,21], sort_rpm=True):
+    # global rpm_shape, torque_shape, power_shape
+    # if accelrun_bounds[1] is None:
+    #      accelrun_bounds[1] = len(accelrun.v) 
+    # if dragrun_bounds[1] is None:
+    #     dragrun_bounds[1] = len(dragrun.v) 
+    # self.dragrun.modify(box_pts=1, overflow=0)
+    if smoothing == 'rolling':
+        accelrun.rolling_avg(box_pts=accelrun_smooth)
+    if smoothing == 'multi_rolling':
+        accelrun.multi_rolling_avg(box_pts_array=accelrun_smooth)
+    elif smoothing == 'lowpass':
+        accelrun.low_pass_filter(bandlimit=accelrun_smooth)
+        
+    dragP = Polynomial.fit(dragrun.v[dragrun_bounds[0]:], 
+                           dragrun.a[dragrun_bounds[0]:], deg=[1,2], 
+                           domain=[0, max(accelrun.v)], 
+                           window=[0, max(accelrun.v)])
+    
+    torque_shape = accelrun.a - dragP(accelrun.v)
+    rpm_shape = sorted(accelrun.rpm) if sort_rpm else accelrun.rpm
+    power_shape = torque_shape * rpm_shape
+    
+    return np.array(rpm_shape), torque_shape, power_shape
 
 
 
