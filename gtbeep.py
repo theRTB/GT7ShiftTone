@@ -34,8 +34,13 @@ from buttongraph import GUIButtonGraph
 from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
                           GUIHysteresisPercent, GUIRevlimit, GUIVolume, 
                           GUIPeakPower, GUITach, GUIButtonStartStop, 
-                          GUIButtonVarEdit, GUITargetIP, GUIRevbarData)
-        
+                          GUIButtonVarEdit, GUITargetIP, GUIRevbarData,
+                          GUIButtonDynamicToggle)
+#TODO:
+    #move Volume, start/reset buttons, PS5 IP into its own labelframe
+    #Copy button: open Textbox with various stats pasted for copy and paste
+    #
+
 #main class for ForzaShiftTone
 #it is responsible for creating and managing the tkinter window
 #and maintains the loop logic
@@ -108,7 +113,7 @@ class GTBeep():
         self.revlimit_percent = GUIRevlimitPercent(frame, config)
         self.revlimit_offset = GUIRevlimitOffset(frame, config)
         self.buttonvaredit = GUIButtonVarEdit(frame, self.edit_handler)
-        self.target_ip = GUITargetIP(frame, config.target_ip)
+        self.dynamictoneoffset = GUIButtonDynamicToggle(frame, config)
         self.buttonvaredit.invoke() #trigger disabling of var boxes
 
     def init_gui_vars(self):
@@ -120,14 +125,16 @@ class GTBeep():
         self.revbardata = GUIRevbarData(root)
         self.tach = GUITach(root)
         
-        self.buttonframe = tkinter.Frame()
-        self.buttonreset = tkinter.Button(self.buttonframe, text='Reset', 
+        self.connectionframe = tkinter.LabelFrame(text='Connection')
+        self.buttonreset = tkinter.Button(self.connectionframe, text='Reset', 
                                           borderwidth=3, 
                                           command=self.reset)
-        self.buttonstartstop = GUIButtonStartStop(self.buttonframe, 
+        self.buttonstartstop = GUIButtonStartStop(self.connectionframe, 
                                                   self.startstop_handler)
-        self.buttonstartstop.pack(fill=tkinter.BOTH, side=tkinter.BOTTOM)
-        self.buttonreset.pack(fill=tkinter.BOTH, side=tkinter.BOTTOM)
+        self.target_ip = GUITargetIP(self.connectionframe, config.target_ip)
+        self.target_ip.grid(row=0, column=0, columnspan=2)
+        self.buttonstartstop.grid(row=1, column=0)
+        self.buttonreset.grid(row=1, column=1)
         
         self.buttongraph = GUIButtonGraph(root, self.buttongraph_handler, 
                                           config)
@@ -139,15 +146,16 @@ class GTBeep():
         self.hysteresis_percent.grid(row=1, column=0)
         self.revlimit_percent.grid(  row=2, column=0)
         self.revlimit_offset.grid(   row=3, column=0)
-        self.target_ip.grid(         row=4, column=0, columnspan=3)
+        
         self.buttonvaredit.grid(     row=0, column=3)
+        self.dynamictoneoffset.grid(     row=5, column=0, columnspan=3)
 
     def init_gui_grid(self):
         self.gears.init_grid()
         row = GUIGears.ROW_COUNT #start from row below gear display
         
         #force minimum row size for other rows
-        self.root.rowconfigure(index=row+2, weight=1000)
+        self.root.rowconfigure(index=row+3, weight=1000)
         
         self.volume.grid(     row=0,     column=12, rowspan=4)         
        
@@ -157,12 +165,12 @@ class GTBeep():
                                                             sticky=tkinter.EW)
         
         self.peakpower.grid(  row=row+1, column=0)   
-        self.buttonframe.grid(row=row+1, column=12, rowspan=2, 
-                                                          sticky=tkinter.NSEW)
-        self.buttongraph.grid(row=row+1, column=6, rowspan=3)
+        self.connectionframe.grid(row=row+1, column=4, rowspan=3, columnspan=3,
+                                                             sticky=tkinter.EW)
+        self.buttongraph.grid(row=row+1, column=12, rowspan=3)
                 
-        self.tach.grid(       row=row+2, column=0)
-        
+        self.tach.grid(       row=row+3, column=0)
+
         self.init_gui_varframe_grid()
         
     def startstop_handler(self, event=None):
@@ -181,7 +189,7 @@ class GTBeep():
         for var in [self.revlimit_offset, self.revlimit_percent,
                     self.tone_offset, self.hysteresis_percent]:
             var.config(state=state)
-                
+
     def reset(self, *args):
         self.datacollector.reset()
         self.lookahead.reset()
@@ -315,7 +323,8 @@ class GTBeep():
             self.tone_offset.decrement_counter()
         if shiftrpm is not None:
             counter = self.tone_offset.get_counter()
-            self.tone_offset.finish_counter() #update dynamic offset logic
+            if self.dynamictoneoffset.get():
+                self.tone_offset.finish_counter() #update dynamic offset logic
             if config.log_basic_shiftdata:
                 self.debug_log_basic_shiftdata(shiftrpm, gtdp.gear, counter)
         self.we_beeped = 0
@@ -443,7 +452,7 @@ class GTBeep():
         try:
             gui_vars = ['revlimit_percent', 'revlimit_offset', 'tone_offset',
                         'hysteresis_percent', 'volume', 'target_ip', 
-                        'window_x', 'window_y']
+                        'window_x', 'window_y', ]
             for variable in gui_vars:
                 setattr(config, variable, getattr(self, variable).get())
             config.write_to(FILENAME_SETTINGS)

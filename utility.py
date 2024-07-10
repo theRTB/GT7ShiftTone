@@ -149,6 +149,8 @@ def rolling_avg(y, box_pts, mode='valid'):
     y_smooth = np.convolve(y, box, mode=mode)
     return y_smooth
 
+#Derives an rpm/torque curve from an rpm/accel curve up to revlimit along with
+#an array of consecutive velocity/accel points at high speed. The 
 #initial rolling average of 3 points is to correct unusual behavior from for
 #example the Bugatti VGT where the data points oscillate every other point
 #TODO: implement bounds: at the moment only dragrun lower bound works

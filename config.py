@@ -47,6 +47,7 @@ class config():
     tone_offset_lower =  9
     tone_offset_upper = 25
     tone_offset_outlier = 30 #discard for dynamic tone if above this distance
+    dynamictoneoffset = 1 #1 is true, 0 is false
     
     revlimit_percent = 0.98 #respected rev limit for trigger revlimit as pct%
     revlimit_percent_lower = 0.900

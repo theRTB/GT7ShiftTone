@@ -381,6 +381,18 @@ class GUIButtonVarEdit():
     def invoke(self):
         self.button.invoke()
 
+class GUIButtonDynamicToggle():
+    def __init__(self, root, config):
+        self.tkvar = tkinter.IntVar(value=config.dynamictoneoffset)
+        self.button = tkinter.Checkbutton(root, text='Dynamic tone offset', 
+                                          variable=self.tkvar)
+
+    def grid(self, row, column, *args, **kwargs):
+        self.button.grid(row=row, column=column, *args, **kwargs)
+
+    def get(self):
+        return self.tkvar.get()
+
 class GUIRevbarData():
     def __init__(self, root, defaultguivalue='N/A'):
         self.defaultguivalue = defaultguivalue
