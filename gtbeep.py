@@ -35,7 +35,7 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
                           GUIHysteresisPercent, GUIRevlimit, GUIVolume, 
                           GUIPeakPower, GUITach, GUIButtonStartStop, 
                           GUIButtonVarEdit, GUITargetIP, GUIRevbarData,
-                          GUIButtonDynamicToggle)
+                          GUIButtonDynamicToggle, GUIGTUDPLoop)
 #TODO:
     #move Volume, start/reset buttons, PS5 IP into its own labelframe
     #Copy button: open Textbox with various stats pasted for copy and paste
@@ -56,7 +56,7 @@ class GTBeep():
         self.init_gui_vars()
         self.init_gui_grid()
         
-        self.buttonstartstop.invoke() #trigger start of loop
+        self.loop.firststart() #trigger start of loop given IP address
         self.root.mainloop()
 
     #variables are defined again in init_gui_vars, purpose is to split baseline
@@ -118,6 +118,7 @@ class GTBeep():
 
     def init_gui_vars(self):
         root = self.root
+        self.loop = GUIGTUDPLoop(root, config)
         self.gears = GUIGears(root)
         self.revlimit = GUIRevlimit(root, defaultvalue=-1)
         self.volume = GUIVolume(root, value=config.volume)
@@ -125,16 +126,8 @@ class GTBeep():
         self.revbardata = GUIRevbarData(root)
         self.tach = GUITach(root)
         
-        self.connectionframe = tkinter.LabelFrame(text='Connection')
-        self.buttonreset = tkinter.Button(self.connectionframe, text='Reset', 
-                                          borderwidth=3, 
+        self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
                                           command=self.reset)
-        self.buttonstartstop = GUIButtonStartStop(self.connectionframe, 
-                                                  self.startstop_handler)
-        self.target_ip = GUITargetIP(self.connectionframe, config.target_ip)
-        self.target_ip.grid(row=0, column=0, columnspan=2)
-        self.buttonstartstop.grid(row=1, column=0)
-        self.buttonreset.grid(row=1, column=1)
         
         self.buttongraph = GUIButtonGraph(root, self.buttongraph_handler, 
                                           config)
@@ -148,7 +141,7 @@ class GTBeep():
         self.revlimit_offset.grid(   row=3, column=0)
         
         self.buttonvaredit.grid(     row=0, column=3)
-        self.dynamictoneoffset.grid(     row=5, column=0, columnspan=3)
+        self.dynamictoneoffset.grid( row=5, column=0, columnspan=3)
 
     def init_gui_grid(self):
         self.gears.init_grid()
@@ -165,20 +158,14 @@ class GTBeep():
                                                             sticky=tkinter.EW)
         
         self.peakpower.grid(  row=row+1, column=0)   
-        self.connectionframe.grid(row=row+1, column=4, rowspan=3, columnspan=3,
+        self.loop.grid(       row=row+1, column=4, rowspan=3, columnspan=3,
                                                              sticky=tkinter.EW)
         self.buttongraph.grid(row=row+1, column=12, rowspan=3)
                 
-        self.tach.grid(       row=row+3, column=0)
+        self.buttonreset.grid(row=row+3, column=2)
+        self.tach.grid(       row=row+4, column=0)
 
         self.init_gui_varframe_grid()
-        
-    def startstop_handler(self, event=None):
-        if self.target_ip.get() != '':
-            self.buttonstartstop.toggle(self.loop.is_running())
-            self.target_ip.toggle(self.loop.is_running())
-            self.loop.set_target_ip(self.target_ip.get())
-            self.loop.toggle(True)
 
     def buttongraph_handler(self, event=None):
         self.buttongraph.create_window(self.curve, self.revlimit_percent.get())
@@ -374,6 +361,7 @@ class GTBeep():
 
         self.debug_log_full_shiftdata(gtdp)
 
+    #TODO: Move the torque ratio function to PowerCurve
     #to account for torque not being flat, we take a linear approach
     #we take the ratio of the current torque and the torque at the shift rpm
     # if < 1: the overall acceleration will be lower than a naive guess
@@ -449,10 +437,13 @@ class GTBeep():
         self.window_x = Variable(self.root.winfo_x())
         self.window_y = Variable(self.root.winfo_y())
         
+        #hack to get ip from loop
+        self.target_ip = self.loop.gui_ip
+        
         try:
             gui_vars = ['revlimit_percent', 'revlimit_offset', 'tone_offset',
                         'hysteresis_percent', 'volume', 'target_ip', 
-                        'window_x', 'window_y', ]
+                        'window_x', 'window_y', 'dynamictoneoffset']
             for variable in gui_vars:
                 setattr(config, variable, getattr(self, variable).get())
             config.write_to(FILENAME_SETTINGS)

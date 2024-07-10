@@ -232,36 +232,6 @@ class GUIRevlimit(Variable):
         self.tkvar.set(self.defaultguivalue)
         self.set_bg(state='initial')
 
-#TODO: update this class to use ipaddress library
-class GUITargetIP():
-    def __init__(self, root, defaultguivalue=''):
-        self.defaultguivalue = defaultguivalue
-        
-        self.tkvar = tkinter.StringVar(value=defaultguivalue)    
-        
-        self.label = tkinter.Label(root, text='PS5 IP')        
-        self.entry = tkinter.Entry(root, width=13, textvariable=self.tkvar,
-                                   justify=tkinter.RIGHT)
-    
-    #sticky and columnspan are not forwarded to the grid function
-    def grid(self, column, sticky='', columnspan=1, *args, **kwargs):
-        self.label.grid(column=column, sticky=tkinter.E, *args, **kwargs)
-        self.entry.grid(column=column+1, sticky=tkinter.W, 
-                        columnspan=columnspan, *args,**kwargs)
-
-    def toggle(self, toggle):
-        state = tkinter.NORMAL if toggle else 'readonly'
-        self.entry.config(state=state)
-
-    def get(self):
-        return self.tkvar.get()
-
-    def set(self, value):
-        self.tkvar.set(round(value))
-        
-    def reset(self):
-        self.tkvar.set(self.defaultguivalue)
-
 class GUITach():
     def __init__(self, root, defaultguivalue=0):
         self.defaultguivalue = defaultguivalue
@@ -423,3 +393,63 @@ class GUIRevbarData():
         if not self.grabbed_data:
             self.set(f'{value}:.0f')
             self.grabbed_data = True
+
+#TODO: update this class to use ipaddress library
+class GUITargetIP():
+    def __init__(self, root, defaultguivalue=''):
+        self.defaultguivalue = defaultguivalue
+        
+        self.tkvar = tkinter.StringVar(value=defaultguivalue)    
+        
+        self.label = tkinter.Label(root, text='PS5 IP')        
+        self.entry = tkinter.Entry(root, width=13, textvariable=self.tkvar,
+                                   justify=tkinter.RIGHT)
+    
+    #sticky and columnspan are not forwarded to the grid function
+    def grid(self, column, sticky='', columnspan=1, *args, **kwargs):
+        self.label.grid(column=column, sticky=tkinter.E, *args, **kwargs)
+        self.entry.grid(column=column+1, sticky=tkinter.W, 
+                        columnspan=columnspan, *args,**kwargs)
+
+    def toggle(self, toggle):
+        state = tkinter.NORMAL if toggle else 'readonly'
+        self.entry.config(state=state)
+
+    def get(self):
+        return self.tkvar.get()
+
+    # def set(self, value):
+    #     self.tkvar.set(round(value))
+        
+    def reset(self):
+        self.tkvar.set(self.defaultguivalue)
+
+#TODO: add text block with "Receiving" if loop is receiving data
+#and "No data" if no data received yet but is running
+from gtudploop import GTUDPLoop
+class GUIGTUDPLoop(GTUDPLoop):
+    def __init__(self, root, config, loop_func=None):
+        super().__init__(config.target_ip, loop_func=loop_func)
+        self.init_tkinter(root, config)
+
+    def init_tkinter(self, root, config):
+        self.frame = tkinter.LabelFrame(text='Connection')
+        self.buttonstartstop = GUIButtonStartStop(self.frame, 
+                                                  self.startstop_handler)
+        self.gui_ip = GUITargetIP(self.frame, config.target_ip)
+        
+        self.gui_ip.grid(row=0, column=0, columnspan=2)
+        self.buttonstartstop.grid(row=1, column=0)
+    
+    def grid(self, row, column, *args, **kwargs):
+        self.frame.grid(row=row, column=column, *args, **kwargs)
+
+    def firststart(self):
+        self.startstop_handler() #implied start, not explicit start
+
+    def startstop_handler(self, event=None):
+        if self.gui_ip.get() != '':
+            self.buttonstartstop.toggle(self.is_running()) #toggle text
+            self.gui_ip.toggle(self.is_running()) #toggle read-only
+            self.set_target_ip(self.gui_ip.get()) #set loop IP before start
+            self.toggle(True)
