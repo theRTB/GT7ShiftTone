@@ -266,14 +266,15 @@ class GTBeep():
 
         if self.curve is None:
             self.loop_datacollector_setcurve()
+            self.gears.calculate_shiftrpms(self.curve.rpm, self.curve.power)
 
     def loop_update_gear(self, gtdp):
         self.gears.update(gtdp)
 
-    def loop_calculate_shiftrpms(self):
-        if self.curve is None:
-            return
-        self.gears.calculate_shiftrpms(self.curve.rpm, self.curve.power)
+    # def loop_calculate_shiftrpms(self):
+    #     if self.curve is None:
+    #         return
+    #     self.gears.calculate_shiftrpms(self.curve.rpm, self.curve.power)
 
     def debug_log_basic_shiftdata(self, shiftrpm, gear, beep_distance):
         target = self.debug_target_rpm
@@ -361,7 +362,7 @@ class GTBeep():
         self.loop_linreg(gtdp) #update lookahead with hysteresis rpm
         self.loop_datacollector(gtdp) #add data point for curve collecting
         self.loop_update_gear(gtdp) #update gear ratio and state of gear
-        self.loop_calculate_shiftrpms() #derive shift rpm if possible
+        # self.loop_calculate_shiftrpms() #derive shift rpm if possible
         self.loop_test_for_shiftrpm(gtdp) #test if we have shifted
         self.loop_beep(gtdp) #test if we need to beep
 
