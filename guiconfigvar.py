@@ -391,7 +391,7 @@ class GUIRevbarData():
         
     def update(self, value):
         if not self.grabbed_data:
-            self.set(f'{value}:.0f')
+            self.set(f'{value:.0f}')
             self.grabbed_data = True
 
 #TODO: update this class to use ipaddress library
