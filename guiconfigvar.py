@@ -363,24 +363,27 @@ class GUIButtonDynamicToggle():
     def get(self):
         return self.tkvar.get()
 
+#The in-game revbar scales off the revbar variable in telemetry:
+    #Starts at 85% and starts blinking at 99%
 class GUIRevbarData():
-    def __init__(self, root, defaultguivalue='N/A'):
+    LOWER, UPPER = 0.85, 0.99
+    def __init__(self, root, defaultguivalue='N/A - N/A'):
         self.defaultguivalue = defaultguivalue
         
         self.tkvar = tkinter.StringVar(value=defaultguivalue)    
         
         self.label = tkinter.Label(root, text='Revbar')        
-        self.entry = tkinter.Entry(root, width=6, textvariable=self.tkvar,
+        self.entry = tkinter.Entry(root, width=12, textvariable=self.tkvar,
                                    justify=tkinter.RIGHT, state='readonly')
-        self.unit = tkinter.Label(root, text='max RPM')
+        self.unit = tkinter.Label(root, text='RPM')
         
         self.grabbed_data = False
     
     #sticky and columnspan are not forwarded to the grid function
     def grid(self, column, sticky='', columnspan=1, *args, **kwargs):
         self.label.grid(column=column, columnspan=1, sticky=tkinter.E, *args, **kwargs)
-        self.entry.grid(column=column+1, columnspan=1, *args, **kwargs)
-        self.unit.grid(column=column+2, columnspan=2, sticky=tkinter.W, *args, **kwargs)
+        self.entry.grid(column=column+1, columnspan=2, *args, **kwargs)
+        self.unit.grid(column=column+3, columnspan=1, sticky=tkinter.W, *args, **kwargs)
     
     def set(self, value):
         self.tkvar.set(value)
@@ -391,7 +394,7 @@ class GUIRevbarData():
         
     def update(self, value):
         if not self.grabbed_data:
-            self.set(f'{value:.0f}')
+            self.set(f'{value*self.LOWER:5.0f} - {value*self.UPPER:5.0f}')
             self.grabbed_data = True
 
 #TODO: update this class to use ipaddress library
@@ -401,7 +404,7 @@ class GUITargetIP():
         
         self.tkvar = tkinter.StringVar(value=defaultguivalue)    
         
-        self.label = tkinter.Label(root, text='PS5 IP')        
+        self.label = tkinter.Label(root, text='PS IP')        
         self.entry = tkinter.Entry(root, width=13, textvariable=self.tkvar,
                                    justify=tkinter.RIGHT)
     
