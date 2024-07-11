@@ -39,7 +39,13 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
 #TODO:
     #move Volume, start/reset buttons, PS5 IP into its own labelframe
     #Copy button: open Textbox with various stats pasted for copy and paste
-    #
+    #Revbar runs from 85% to 99% of the revbar variable in telemetry
+    #This can be used to provide guesstimates for shift points without a beep
+    #Especially in the Copy section
+    #The Transmission shift line is _NOT_ equal to revbar blinking if ECU or
+    #Transmission are not stock. It can be be off by 100-400rpm depending 
+    #on the combo used. Other parts may also affect the valid RPM range and not
+    #update the revbar appropriately. It seems to stick to 100 rpm intervals.
 
 #main class for ForzaShiftTone
 #it is responsible for creating and managing the tkinter window
@@ -48,7 +54,7 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
 #seconds after launching, despite the back-end still updating
 class GTBeep():
     TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
-    WIDTH, HEIGHT = 750, 252
+    WIDTH, HEIGHT = 813, 289 #most recent dump of size at 150% scaling
     
     def __init__(self):
         self.init_vars()
@@ -436,7 +442,7 @@ class GTBeep():
         #grab x,y position to save as window_x and window_y
         self.window_x = Variable(self.root.winfo_x())
         self.window_y = Variable(self.root.winfo_y())
-        
+                
         #hack to get ip from loop
         self.target_ip = self.loop.gui_ip
         

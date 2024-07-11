@@ -250,7 +250,7 @@ class PowerWindow():
 class GUIButtonGraph():
     TITLE = "GTShiftTone: Power graph"
     #target width and height of the graph not the window
-    WIDTH, HEIGHT= 745, 500
+    WIDTH, HEIGHT= 813, 500
     FIGURE_DPI = 72
 
     def __init__(self, root, handler, config):
