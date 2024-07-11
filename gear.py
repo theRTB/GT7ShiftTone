@@ -5,22 +5,22 @@ Created on Wed Aug  2 20:46:58 2023
 @author: RTB
 """
 import math
-import statistics
 from collections import deque
 
-from mttkinter import mtTkinter as tkinter
+from utility import calculate_shiftrpm
 
-from utility import derive_gearratio, calculate_shiftrpm
-
-#The Forza series is limited to 10 gears (ignoring reverse)
+#Taken from ForzaShiftTone. GT7 telemetry officially goes up to 8 gears, but
+#if a car has more than 8, it will overflow into other variables. This logic 
+#has not been programmed in, so effectively only 8 gears. If we set this to 8
+#the GUI doesn't align properly.
 MAXGEARS = 10
 
 #Enumlike class
 class GearState():
     UNUSED     = 0 # gear has not been seen (yet)
-    REACHED    = 1 # gear has been seen, variance above lower bound
-    LOCKED     = 2 # variance on gear ratio below lower bound
-    CALCULATED = 3 # shift rpm calculated off gear ratios
+    REACHED    = 1 # gear has been seen (effectively unused for GT7)
+    LOCKED     = 2 # gear ratio grabbed from data packet
+    CALCULATED = 3 # shift rpm calculated off gear ratios and power curve
 
     def reset(self):
         self.state = self.UNUSED
@@ -130,30 +130,24 @@ class Gear():
         self.state.to_next()
 
     #return True if we should play gear beep
-    def update(self, gtdp):
+    def update(self, gtdp, prevgear):
         if self.state.at_initial():
             self.to_next_state()
 
         if self.state.at_least_locked():
             return
-
         if not (ratio := round(gtdp.gears[self.gear], 3)):
             return
-
-        # self.ratio_deque.append(ratio)
-        # if len(self.ratio_deque) < 10:
-        #     return
-
-        # median = statistics.median(self.ratio_deque)
-        # variance = statistics.variance(self.ratio_deque)
+        
         self.set_ratio(ratio)
+        
+        if prevgear is not None and prevgear.state.at_least_locked():
+            relratio =  prevgear.get_ratio() / ratio
+            prevgear.set_relratio(relratio)
+            
         self.to_next_state() #implied from reached to locked
         print(f'LOCKED {self.gear}: {ratio:.3f}')
         return True
-        # self.set_variance(variance)
-
-        # if (self.variance < self.VAR_BOUNDS[fdp.drivetrain_type] and
-        #         len(self.ratio_deque) >= self.DEQUE_MIN):
 
     def calculate_shiftrpm(self, rpm, power, nextgear):
         if (self.state.at_locked() and nextgear.state.at_least_locked()):
@@ -191,13 +185,14 @@ class Gears():
             return self.gears[int(gear)].get_shiftrpm()
         return -1
 
-    #call update function of current gear in fdp
-    #return True if gear has locked and therefore double beep
+    #call update function of gear 1 to 8. We haven't updated the GUI display
+    #because it messes up the available space
+    #add the previous gear
     def update(self, gtdp):
-        for gear in self.gears[1:-2]:
-            gear.update(gtdp)
-        # gear = int(fdp.gear)
-        # return self.gears[gear].update(fdp)
+        for gear, prevgear in zip(self.gears[1:-2], [None] + self.gears[1:-3]):
+            gear.update(gtdp, prevgear)
+
+from mttkinter import mtTkinter as tkinter
 
 #class for GUI display of class Gear
 #In the GUI the entry for variance is gridded over shiftrpm until shiftrpm
@@ -291,7 +286,7 @@ class GUIGear (Gear):
         
         self.shiftrpm_entry.config(**shiftrpm_colors)
         self.ratio_entry.config(**ratio_colors)
-        self.relratio_entry.config(**shiftrpm_colors)
+        self.relratio_entry.config(**ratio_colors)
 
     def to_next_state(self):
         super().to_next_state()
@@ -299,10 +294,10 @@ class GUIGear (Gear):
         if self.state.at_final():
             self.variance_entry.grid_remove()
 
-    def update(self, gtdp):
+    def update(self, gtdp, prevgear):
         if self.var_bound is None:
             self.var_bound = 1e-5 #self.VAR_BOUNDS[fdp.drivetrain_type]
-        return super().update(gtdp)
+        return super().update(gtdp, prevgear)
 
     def toggle_ratio_display(self):
         if self.ratio_entry.winfo_viewable():
