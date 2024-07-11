@@ -6,7 +6,7 @@ It beeps, you shift.
 ![example v0.78 Subaru WRX STi 2014](images/GUIandPower.png)
 
 ## Steps
-- One time: Enter your PS5 IP into the UI then hit Start
+- One time: Enter your Console IP into the UI then hit Start
 - Load into Special Route X Time Trial, drive until past the first tunnel
 - Straighten the car, apply full throttle in a gear that goes from low/medium RPM to revlimit in a few seconds
 - The moment revlimit is hit, briefly press handbrake to initiate the clutch
@@ -75,10 +75,11 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761 then th
 
 ## Known issues
 - Application will on rare occasions crash: related to the UI library and cannot be fixed
-- Absolute power values in the graph are non-sense: GT7 only provides acceleration not power/torque.
+- Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque.
 - Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 50 or 100 RPM.
 - The data is smoothed and will not 100% match the ingame curve which is linear interpolation between points
-- Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example)
+- Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example), complicating data gathering
 - The default values are arbitrarily chosen and may not suit individual cars or track surface: so far, shifts appear to be too early.
 - Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run.
+- On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on every launch
 - Linux support is untested
