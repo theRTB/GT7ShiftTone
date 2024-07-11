@@ -246,7 +246,7 @@ class GTAccelCollector():
                 self.reset()
             else:
                 self.state = 'DONE'
-                print("Accelrun done!")
+                print(f"Accelrun done! Peak at {self.peak_rpm:.0f}")
 
         self.prev_rpm = gtdp.current_engine_rpm
         self.peak_rpm = max(self.peak_rpm, gtdp.current_engine_rpm)
