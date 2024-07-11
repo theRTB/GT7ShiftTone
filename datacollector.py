@@ -161,7 +161,7 @@ class GTDragCollector():
 
         if self.state == 'TEST':
             if len(self.run) < self.MIN_DURATION*60:
-                print(f'RUN RESET UNDER {self.min_duration} seconds')
+                print(f'RUN RESET UNDER {self.MIN_DURATION} seconds')
                 self.reset()
             else:
                 self.state = 'PRINT'
