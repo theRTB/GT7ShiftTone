@@ -118,7 +118,7 @@ class GTBeep():
 
     def init_gui_vars(self):
         root = self.root
-        self.loop = GUIGTUDPLoop(root, config)
+        self.loop = GUIGTUDPLoop(root, config, loop_func=self.loop_func)
         self.gears = GUIGears(root)
         self.revlimit = GUIRevlimit(root, defaultvalue=-1)
         self.volume = GUIVolume(root, value=config.volume)
