@@ -112,7 +112,6 @@ class GUIConfigVariable(Variable):
                                        values=values_gui, command=self.update)
         self.tkvar.set(gui_value) #force spinbox to initial value
 
-
     def grid(self, row, column=0, *args, **kwargs):
         self.label.grid(  row=row, column=column,   sticky=tkinter.E)
         self.spinbox.grid(row=row, column=column+1)
@@ -299,16 +298,13 @@ class GUIVolume():
         self.scale = tkinter.Scale(frame, orient=tkinter.VERTICAL, showvalue=1,
                                    from_=self.MAX, to=self.MIN, 
                                    resolution=self.STEP, variable=self.tkvar)
+        
+        self.label.pack()
+        self.scale.pack(expand=True, fil=tkinter.X)
 
     #sticky and columnspan are not forwarded to the grid function
     def grid(self, row, column, *args, **kwargs):
-        self.label.pack()
-        self.scale.pack(expand=True, fil=tkinter.X)
         self.frame.grid(row=row, column=column, *args, **kwargs)
-        # self.label.grid(row=row, column=column, columnspan=2, 
-        #                 sticky=tkinter.SE)
-        # self.scale.grid(row=row+1, column=column+1, columnspan=1, rowspan=4, 
-        #                 sticky=tkinter.NE)
 
     def get(self):
         return self.tkvar.get()
@@ -407,6 +403,9 @@ class GUITargetIP():
         self.label = tkinter.Label(root, text='PS IP')        
         self.entry = tkinter.Entry(root, width=13, textvariable=self.tkvar,
                                    justify=tkinter.RIGHT)
+        
+        self.hide_ip = False
+        self.label.bind('<Double-Button-1>', self.hide_ip_handler)
     
     #sticky and columnspan are not forwarded to the grid function
     def grid(self, column, sticky='', columnspan=1, *args, **kwargs):
@@ -421,11 +420,23 @@ class GUITargetIP():
     def get(self):
         return self.tkvar.get()
 
-    # def set(self, value):
-    #     self.tkvar.set(round(value))
+    def hide_ip_handler(self, event=None):
+        fg = '#000000' if self.hide_ip else '#F0F0F0'
+        self.entry.config(fg=fg)
+        self.hide_ip = not self.hide_ip
         
     def reset(self):
         self.tkvar.set(self.defaultguivalue)
+
+class GUIStatus():
+    def __init__(self, root):
+        self.tkvar = tkinter.StringVar(value='Waiting')            
+        self.label = tkinter.Label(root, textvariable=self.tkvar, 
+                                   relief=tkinter.GROOVE, width=12)    
+
+    def grid(self, row, column, *args, **kwargs):
+        self.label.grid(row=row, column=column, *args, **kwargs)
+        
 
 #TODO: add text block with "Receiving" if loop is receiving data
 #and "No data" if no data received yet but is running
@@ -436,13 +447,16 @@ class GUIGTUDPLoop(GTUDPLoop):
         self.init_tkinter(root, config)
 
     def init_tkinter(self, root, config):
-        self.frame = tkinter.LabelFrame(text='Connection')
+        self.frame = tkinter.LabelFrame(root, text='Connection')
         self.buttonstartstop = GUIButtonStartStop(self.frame, 
                                                   self.startstop_handler)
         self.gui_ip = GUITargetIP(self.frame, config.target_ip)
+
+        self.status = GUIStatus(self.frame)
         
         self.gui_ip.grid(row=0, column=0, columnspan=2)
         self.buttonstartstop.grid(row=1, column=0)
+        self.status.grid(row=1, column=1, columnspan=2)
     
     def grid(self, row, column, *args, **kwargs):
         self.frame.grid(row=row, column=column, *args, **kwargs)
