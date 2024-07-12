@@ -10,12 +10,17 @@ from threading import Timer
 from concurrent.futures.thread import ThreadPoolExecutor
 from gtdatapacket import GTDataPacket
 
-#TODO: use ipaddress library for target_ip
+#TODO:
+# - use ipaddress library for target_ip
+# - consider a second socket to send packets, to set two different timeouts
+# - replace 1024 in recvfrom with correct packet size, if there are multiple
+#   packets in queue, this may mess things up. So far so good.
+
 #Class to manage the incoming/outgoing packet stream from/to the PS5
 #loop_func is called for each consecutive received packet
 #Default socket timeout is 15 seconds, this seems to delay exiting any program
-#TODO: Consider setting timeout to 0 seconds before exiting?
 #Sends a heartbeat every 10 seconds
+
 class GTUDPLoop():
     RECV_PORT = 33740
     HEARTBEAT_PORT = 33739
@@ -36,7 +41,7 @@ class GTUDPLoop():
         if self.socket is None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.settimeout(15)
+            sock.settimeout(1)
             sock.bind(('', self.RECV_PORT))
         return sock
     
@@ -46,22 +51,24 @@ class GTUDPLoop():
     def toggle(self, toggle=None):
         if toggle and not self.isRunning:
             def starting():
-                print("We starting")
+                print("Starting loop")
                 self.isRunning = True
+                #This was an attempt to close the socket after the loop ends
+                #Not sure it is succesful.
                 with self.init_socket() as self.socket:
                     self.maintain_heartbeat()
                     self.gtdp_loop(self.loop_func)
+                self.socket = None
             self.threadPool.submit(starting)
         else:
             def stopping():
-                print("We stopping")
+                print("Stopping loop")
                 self.isRunning = False
                 if self.t is not None:
                     self.t.cancel() #abort running timer
                 else:
                     print("Heartbeat timer was not running on stopping")
             self.threadPool.submit(stopping)
-        return self.isRunning
 
     def gtdp_loop(self, loop_func=None):
         try:
@@ -106,8 +113,6 @@ class GTUDPLoop():
     def nextGTdp(self):
         try:
             rawdata, _ = self.socket.recvfrom(1024)
-            # print(rawdata)
-            # self.rawdata = rawdata
             return GTDataPacket(rawdata)
         except BaseException as e:
             print(f"BaseException {e}")
