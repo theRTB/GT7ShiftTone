@@ -6,10 +6,10 @@ It beeps, you shift.
 ![example v0.78 Subaru WRX STi 2014](images/GUIandPower.png)
 
 ## Steps
-- One time: Enter your Console IP into the UI then hit Start
+- One time: Enter your console IP into the UI then hit Start
 - Load into Special Route X Time Trial, drive until past the first tunnel
 - Straighten the car, apply full throttle in a gear that goes from low/medium RPM to revlimit in a few seconds
-- The moment revlimit is hit, briefly press handbrake to initiate the clutch
+- When revlimit is hit, briefly press handbrake to disengage the clutch
 - Let the car roll for several seconds to 10 seconds (finish before the uphill section)
   - Avoid steering inputs as much as possible, controller is preferable
 - Press throttle to finish. You can now go to other races with a shift beep.
@@ -25,6 +25,12 @@ First public version. This program is not yet user friendly and does not save an
 
 Changes:  
 - Initial release converted from ForzaShiftTone
+- Added toggle to enable/disable Dynamic Tone Offset
+- Added status message on the state of the connection with GT7
+- Added revbar range (starts at 85% and ends at 99% of the telemetry value)
+  - The telemetry upshift value can differ from the value listed in the Transmission page: Transmission value will be wrong
+- Pre-calculate relative ratio before power curve is collected
+- Power graph now displays in percentage of peak power to avoid nonsensical values
 
 ## Implementation
 
@@ -44,7 +50,7 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 
 ## Settings
 
-The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms and Volume. The power curve and gear ratios are not saved.  
+The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and PS IP. The power curve and gear ratios are not saved.  
 Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
 There is one packet per 16.667 milliseconds, approximately.
 
@@ -67,6 +73,7 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761 then th
 - Revlimit %: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
 - Revlimit ms: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
 - Hysteresis: Hysteresis may be set as another layer to smooth RPM. An intermediary RPM value is updated only if the change in RPM is larger than the hysteresis value, which is then used for the shift beep tests. Defaults to 0.5% of maximum engine RPM.
+- Dynamic Tone Offset: Enables or disables the dynamic updating of the tone offset.
 - Volume: Adjusts the volume of the beep in four steps total. Each step is about half as loud as the previous, where the second loudest is the default. A value of 0 mutes only the shift beep.
 - Edit tickbox: If unticked, the up and down arrows for the Tone offset, Revlimit ms/% and Hysteresis values do not function. This is to avoid accidental clicks.
 - Reset button: If pressed, reset revlimit, power curve and all values for all gears. Configuration values are unchanged. If the UI is unresponsive, restart the application.
@@ -74,12 +81,12 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761 then th
 - View graphs button: If enabled and pressed, displays a power graph in a separate window. 
 
 ## Known issues
+- The default values are arbitrarily chosen and may not suit individual cars or track surface: so far, shifts appear to be too early.
 - Application will on rare occasions crash: related to the UI library and cannot be fixed
-- Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque.
-- Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 50 or 100 RPM.
+- ~~Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque. Cannot be fixed.~~
+- Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 100 RPM or more.
 - The data is smoothed and will not 100% match the ingame curve which is linear interpolation between points
 - Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example), complicating data gathering
-- The default values are arbitrarily chosen and may not suit individual cars or track surface: so far, shifts appear to be too early.
-- Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run.
-- On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on every launch
+- Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run minus the points smoothed out.
+- ~~On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on every launch~~
 - Linux support is untested
