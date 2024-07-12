@@ -267,8 +267,8 @@ class GUIPeakPower():
         
         self.tkvar = tkinter.StringVar(value=defaultguivalue)
         
-        self.label = tkinter.Label(root, text='Peak')
-        self.entry = tkinter.Entry(root, textvariable=self.tkvar, width=15,
+        self.label = tkinter.Label(root, text='Power')
+        self.entry = tkinter.Entry(root, textvariable=self.tkvar, width=18,
                                    state='readonly')
     
     #sticky and columnspan are not forwarded to the grid function
@@ -280,7 +280,7 @@ class GUIPeakPower():
 
     def set(self, rpm, peakpower):
         # string = f'~{peakpower/10:>4.0f} kW at ~{round_to(rpm, 50):>5} RPM'
-        string = f'at ~{round_to(rpm, 50):>5} RPM'
+        string = f'peak at ~{round_to(rpm, 50):>5} RPM'
         self.tkvar.set(string)
         
     def reset(self):
