@@ -141,6 +141,10 @@ class Gear():
         
         self.set_ratio(ratio)
         
+        #we use a reverse logic here because the gears are locked sequentially
+        #1 is set then 2, then 3, etc
+        #but we need the 'next gear' to get the relative ratio which is not set
+        #yet at that point.
         if prevgear is not None and prevgear.state.at_least_locked():
             relratio =  prevgear.get_ratio() / ratio
             prevgear.set_relratio(relratio)
