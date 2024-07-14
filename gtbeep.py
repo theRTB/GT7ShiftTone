@@ -25,7 +25,6 @@ from config import config, FILENAME_SETTINGS
 config.load_from(FILENAME_SETTINGS)
 
 from gear import Gears, GUIGears, MAXGEARS
-# from curve import Curve
 from lookahead import Lookahead
 from datacollector import DataCollector
 from gtudploop import GTUDPLoop
@@ -33,9 +32,8 @@ from utility import beep, multi_beep, packets_to_ms, Variable
 from buttongraph import GUIButtonGraph
 from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
                           GUIHysteresisPercent, GUIRevlimit, GUIVolume, 
-                          GUIPeakPower, GUITach, GUIButtonStartStop, 
-                          GUIButtonVarEdit, GUITargetIP, GUIRevbarData,
-                          GUIButtonDynamicToggle, GUIGTUDPLoop)
+                          GUIPeakPower, GUITach, GUIButtonVarEdit, 
+                          GUIRevbarData, GUIButtonDynamicToggle, GUIGTUDPLoop)
 #TODO:
     #move Volume, start/reset buttons, PS5 IP into its own labelframe
     #Copy button: open Textbox with various stats pasted for copy and paste
@@ -46,6 +44,40 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
     #Transmission are not stock. It can be be off by 100-400rpm depending 
     #on the combo used. Other parts may also affect the valid RPM range and not
     #update the revbar appropriately. It seems to stick to 100 rpm intervals.
+
+class History():
+    def __init__(self, config):
+        self.log_basic_shiftdata = config.log_basic_shiftdata
+        self.history = []
+    
+    def add_shiftdata(self, target, shiftrpm, gear, beep_distance):
+        point = {'target': target, 'shiftrpm': shiftrpm, 'gear': gear,
+                 'beep_distance': beep_distance}
+        self.history.append(point)
+    
+    def debug_log_basic_shiftdata(self, target, shiftrpm, gear, 
+                                  beep_distance):
+        # target = self.debug_target_rpm
+        difference = 'N/A' if target == -1 else f'{shiftrpm - target:4.0f}'
+        beep_distance_ms = 'N/A'
+        if beep_distance is not None:
+            beep_distance_ms = packets_to_ms(beep_distance)
+        print(f"gear {gear-1}-{gear}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
+        print("-"*50)
+    
+    def update(self, target, shiftrpm, gear, beep_distance):
+        self.add_shiftdata(target, shiftrpm, gear, beep_distance)
+        if self.log_basic_shiftdata:
+            self.debug_log_basic_shiftdata(target, shiftrpm, gear, 
+                                           beep_distance)
+
+    def reset(self):
+        self.history.clear()
+    
+    #display statistics on difference between target and actual
+    #distance between expected and actual distance between beep and shift
+    def statistics(self):
+        pass
 
 #main class for ForzaShiftTone
 #it is responsible for creating and managing the tkinter window
@@ -74,6 +106,7 @@ class GTBeep():
         self.datacollector = DataCollector(config=config)
         self.lookahead = Lookahead(config.linreg_len_min,
                                    config.linreg_len_max)
+        self.history = History(config=config)
         self.we_beeped = 0
         self.beep_counter = 0
         self.debug_target_rpm = -1
@@ -199,6 +232,7 @@ class GTBeep():
         self.peakpower.reset()
         self.revbardata.reset()
         self.buttongraph.reset()
+        self.history.reset()
 
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter()
@@ -215,9 +249,9 @@ class GTBeep():
         if (self.car_ordinal != gtdp.car_ordinal):
             self.reset()
             self.car_ordinal = gtdp.car_ordinal
-            print(f'New ordinal {self.car_ordinal}, PI Unknown: resetting!')
+            print(f'New ordinal {self.car_ordinal}, PP Unknown: resetting!')
             print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
-            print(f'Engine: Unknown min rpm, {gtdp.engine_max_rpm:.0f} max rpm')
+            print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
             #TODO:
                 #Find and load the appropriately named json file for data
 
@@ -271,20 +305,6 @@ class GTBeep():
     def loop_update_gear(self, gtdp):
         self.gears.update(gtdp)
 
-    # def loop_calculate_shiftrpms(self):
-    #     if self.curve is None:
-    #         return
-    #     self.gears.calculate_shiftrpms(self.curve.rpm, self.curve.power)
-
-    def debug_log_basic_shiftdata(self, shiftrpm, gear, beep_distance):
-        target = self.debug_target_rpm
-        difference = 'N/A' if target == -1 else f'{shiftrpm - target:4.0f}'
-        beep_distance_ms = 'N/A'
-        if beep_distance is not None:
-            beep_distance_ms = packets_to_ms(beep_distance)
-        print(f"gear {gear-1}-{gear}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
-        print("-"*50)
-
     #Function to derive the rpm the player initiated an upshift
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
     #not in gear and there is an increase in the gear number, there has been
@@ -317,10 +337,10 @@ class GTBeep():
             self.tone_offset.decrement_counter()
         if shiftrpm is not None:
             counter = self.tone_offset.get_counter()
+            self.history.update(self.debug_target_rpm, shiftrpm, gtdp.gear, 
+                                counter)
             if self.dynamictoneoffset.get():
                 self.tone_offset.finish_counter() #update dynamic offset logic
-            if config.log_basic_shiftdata:
-                self.debug_log_basic_shiftdata(shiftrpm, gtdp.gear, counter)
         self.we_beeped = 0
         self.debug_target_rpm = -1
         self.shiftdelay_deque.clear()
