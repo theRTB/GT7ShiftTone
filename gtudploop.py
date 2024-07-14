@@ -58,7 +58,7 @@ class GTUDPLoop():
                 with self.init_socket() as self.socket:
                     self.maintain_heartbeat()
                     self.gtdp_loop(self.loop_func)
-                self.socket = None
+                self.socket = None #This runs after the loop stops!
             self.threadPool.submit(starting)
         else:
             def stopping():
@@ -85,8 +85,11 @@ class GTUDPLoop():
 
     def send_heartbeat(self):
         address = (self.target_ip, self.HEARTBEAT_PORT)
-        self.socket.sendto(self.HEARTBEAT_CONTENT, address)
-        print("Heartbeat sent")
+        if self.socket is not None:
+            self.socket.sendto(self.HEARTBEAT_CONTENT, address)
+            print("Heartbeat sent")
+        else:
+            print("Socket was closed for heartbeat")
 
     def maintain_heartbeat(self):
         try:
