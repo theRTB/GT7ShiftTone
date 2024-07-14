@@ -111,6 +111,8 @@ class GUIConfigVariable(Variable):
                                        disabledbackground='#FFFFFF',
                                        values=values_gui, command=self.update)
         self.tkvar.set(gui_value) #force spinbox to initial value
+        #TODO: maybe try .invoke with buttonup/down? The first up/down click
+        #resets the spinbox to the minimum of the range
 
     def grid(self, row, column=0, *args, **kwargs):
         self.label.grid(  row=row, column=column,   sticky=tkinter.E)
