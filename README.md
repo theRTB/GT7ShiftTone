@@ -3,7 +3,7 @@ It beeps, you shift.
 
 **Windows GUI application to provide a shift tone for Gran Turismo 7.**
 
-![example v0.78 Subaru WRX STi 2014](images/GUIandPower.png)
+![example Subaru WRX STI 2014](images/GUIandPower-2.png)
 
 ## Steps
 - One time: Enter your console IP into the UI then hit Start
