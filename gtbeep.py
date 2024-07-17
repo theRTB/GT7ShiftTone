@@ -25,6 +25,7 @@ from config import config, FILENAME_SETTINGS
 config.load_from(FILENAME_SETTINGS)
 
 from gear import Gears, GUIGears, MAXGEARS
+from history import History, GUIHistory
 from lookahead import Lookahead
 from datacollector import DataCollector
 from gtudploop import GTUDPLoop
@@ -45,40 +46,6 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
     #on the combo used. Other parts may also affect the valid RPM range and not
     #update the revbar appropriately. It seems to stick to 100 rpm intervals.
 
-class History():
-    def __init__(self, config):
-        self.log_basic_shiftdata = config.log_basic_shiftdata
-        self.history = []
-    
-    def add_shiftdata(self, target, shiftrpm, gear, beep_distance):
-        point = {'target': target, 'shiftrpm': shiftrpm, 'gear': gear,
-                 'beep_distance': beep_distance}
-        self.history.append(point)
-    
-    def debug_log_basic_shiftdata(self, target, shiftrpm, gear, 
-                                  beep_distance):
-        # target = self.debug_target_rpm
-        difference = 'N/A' if target == -1 else f'{shiftrpm - target:4.0f}'
-        beep_distance_ms = 'N/A'
-        if beep_distance is not None:
-            beep_distance_ms = packets_to_ms(beep_distance)
-        print(f"gear {gear-1}-{gear}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
-        print("-"*50)
-    
-    def update(self, target, shiftrpm, gear, beep_distance):
-        self.add_shiftdata(target, shiftrpm, gear, beep_distance)
-        if self.log_basic_shiftdata:
-            self.debug_log_basic_shiftdata(target, shiftrpm, gear, 
-                                           beep_distance)
-
-    def reset(self):
-        self.history.clear()
-    
-    #display statistics on difference between target and actual
-    #distance between expected and actual distance between beep and shift
-    def statistics(self):
-        pass
-
 #main class for ForzaShiftTone
 #it is responsible for creating and managing the tkinter window
 #and maintains the loop logic
@@ -94,7 +61,7 @@ class GTBeep():
         self.init_gui_vars()
         self.init_gui_grid()
         
-        self.loop.firststart() #trigger start of loop given IP address
+      #  self.loop.firststart() #trigger start of loop given IP address
         self.root.mainloop()
 
     #variables are defined again in init_gui_vars, purpose is to split baseline
@@ -164,6 +131,7 @@ class GTBeep():
         self.peakpower = GUIPeakPower(root)
         self.revbardata = GUIRevbarData(root)
         self.tach = GUITach(root)
+        self.history = GUIHistory(root, config=config)
         
         self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
                                           command=self.reset)
@@ -203,6 +171,7 @@ class GTBeep():
                 
         self.buttonreset.grid(row=row+3, column=2)
         self.tach.grid(       row=row+4, column=0)
+        self.history.grid(    row=row+4, column=12)
 
         self.init_gui_varframe_grid()
 
