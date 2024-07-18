@@ -74,6 +74,7 @@ class GUIHistory (History):
         self.init_tkinter(root, config)
         self.root = root
         self.window = None
+        self.tree = None
 
     def init_tkinter(self, root, config):
         self.button = tkinter.Button(root, text='Shift\nHistory', 
@@ -121,8 +122,15 @@ class GUIHistory (History):
         tree.pack(expand=True, fill=tkinter.BOTH)
         self.tree = tree
 
-    def add_shiftdata(self, point):
-        super().add_shiftdata(point)
+    #Get up to the last (maxlen) shifts and re-add them to the GUI
+    def restore_history(self):
+        length = min(len(self.history), self.maxlen)
+        for item in self.history[-length:]:
+            self.gui_add_shiftdata(item)
+
+    def gui_add_shiftdata(self, point):
+        if self.window is None:
+            return
         
         self.rows.rotate()
         
@@ -132,6 +140,11 @@ class GUIHistory (History):
         
         self.tree.item(self.rows[0], values=list(point.values()), tags=('f'))
         self.tree.move(self.rows[0], '', 0)
+
+    def add_shiftdata(self, point):
+        super().add_shiftdata(point)
+        
+        self.gui_add_shiftdata(point)
         
     def create_window(self):
         if self.window is not None:
@@ -145,6 +158,14 @@ class GUIHistory (History):
         self.window.geometry(f"+{x}+{y}")
         
         self.create_table()
+        self.restore_history()
+    
+    def reset(self):
+        super().reset()
+        
+        blank = dict(zip(self.COLUMNNAMES, ['']*len(self.COLUMNNAMES)))
+        for _ in range(self.maxlen):
+            self.gui_add_shiftdata(blank)
     
     def close(self):
         self.window.destroy()
