@@ -18,7 +18,7 @@ from gtdatapacket import GTDataPacket
 
 #Class to manage the incoming/outgoing packet stream from/to the PS5
 #loop_func is called for each consecutive received packet
-#Default socket timeout is 15 seconds, this seems to delay exiting any program
+#Default socket timeout is 1 seconds, this seems to delay exiting any program
 #Sends a heartbeat every 10 seconds
 
 class GTUDPLoop():
