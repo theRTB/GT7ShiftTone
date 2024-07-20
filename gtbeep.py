@@ -36,15 +36,31 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
                           GUIPeakPower, GUITach, GUIButtonVarEdit, 
                           GUIRevbarData, GUIButtonDynamicToggle, GUIGTUDPLoop)
 #TODO:
-    #move Volume, start/reset buttons, PS5 IP into its own labelframe
+    #Save feature: Save curve as json to load when car id is readable
     #Copy button: open Textbox with various stats pasted for copy and paste
+    #Extend power curve for the RPMs that are lost when applying the rolling
+    #average. Use the function from FH version.
+    #Create an acceleration curve per gear for a more accurate prediction
+    #using the Lookahead slope_factor which is currently used for torque only
+    #This will depend on slip ratio because engine rpm and velocity are not
+    #strictly linear
+
+#NOTES:
+    #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
+    #blinking if ECU or Transmission are not stock. It can be be off by 
+    #100-400rpm depending on the combo used. Other parts may also affect the 
+    #valid RPM range and not update the revbar appropriately. 
+    #The revbar maximum seems to stick to 100 rpm intervals, rounded down from
+    #the Transmission shift line if there are upgrades.
+
     #Revbar runs from 85% to 99% of the revbar variable in telemetry
     #This can be used to provide guesstimates for shift points without a beep
     #Especially in the Copy section
-    #The Transmission shift line is _NOT_ equal to revbar blinking if ECU or
-    #Transmission are not stock. It can be be off by 100-400rpm depending 
-    #on the combo used. Other parts may also affect the valid RPM range and not
-    #update the revbar appropriately. It seems to stick to 100 rpm intervals.
+    #Turbo boolean can be used to imply to shift a little beyond the given
+    #shift points. Maybe detect maximum boost? The higher the boost the worse
+    #the penalty to shifting.
+    
+
 
 #main class for ForzaShiftTone
 #it is responsible for creating and managing the tkinter window
@@ -61,7 +77,7 @@ class GTBeep():
         self.init_gui_vars()
         self.init_gui_grid()
         
-      #  self.loop.firststart() #trigger start of loop given IP address
+        self.loop.firststart() #trigger start of loop given IP address
         self.root.mainloop()
 
     #variables are defined again in init_gui_vars, purpose is to split baseline
@@ -74,6 +90,7 @@ class GTBeep():
         self.lookahead = Lookahead(config.linreg_len_min,
                                    config.linreg_len_max)
         self.history = History(config=config)
+        
         self.we_beeped = 0
         self.beep_counter = 0
         self.debug_target_rpm = -1
@@ -204,7 +221,7 @@ class GTBeep():
         self.history.reset()
 
         self.shiftdelay_deque.clear()
-        self.tone_offset.reset_counter()
+        self.tone_offset.reset_counter() #should this be reset_to_current_value?
         self.rpm_hysteresis = 0
 
         self.gears.reset()
@@ -277,8 +294,10 @@ class GTBeep():
     #Function to derive the rpm the player initiated an upshift
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
     #not in gear and there is an increase in the gear number, there has been
-    #an upshift. We assume the packet before in_gear turns false is the frame
-    #the player pressed upshift.
+    #an upshift. We then run back to the first full throttle packet, because
+    #GT7 first drops power before disengaging the clutch and swapping gear
+    #This is not actually visible in telemetry: Clutch is binary instead of
+    #a 0 - 1 floating point range.
     def loop_test_for_shiftrpm(self, gtdp):
         #case gear is the same in new gtdp or we start from zero
         if (len(self.shiftdelay_deque) == 0 or 
@@ -295,19 +314,22 @@ class GTBeep():
         #case gear has gone up
         prev_packet = gtdp
         shiftrpm = None
+        gear_change = False
         for packet in self.shiftdelay_deque:
             if packet.throttle == 0:
                 break
-            # if prev_packet.power < 0 and packet.power >= 0:
-            if not prev_packet.in_gear and packet.in_gear:
+            if (not prev_packet.in_gear and packet.in_gear):
+                gear_change = True
+            if (gear_change and 
+                (prev_packet.throttle < 255 and packet.throttle == 255)):
                 shiftrpm = packet.current_engine_rpm
                 break
             prev_packet = packet
             self.tone_offset.decrement_counter()
-        if shiftrpm is not None:
-            counter = self.tone_offset.get_counter()
-            self.history.update(self.debug_target_rpm, shiftrpm, gtdp.gear, 
-                                counter)
+            
+        if shiftrpm is not None: #gtdp.gear is the upshifted gear, one too high
+            self.history.update(self.debug_target_rpm, shiftrpm, gtdp.gear-1, 
+                                self.tone_offset.get_counter())
             if self.dynamictoneoffset.get():
                 self.tone_offset.finish_counter() #update dynamic offset logic
         self.we_beeped = 0
@@ -336,26 +358,34 @@ class GTBeep():
 
     def debug_log_full_shiftdata(self, gtdp):
         if self.we_beeped > 0 and config.log_full_shiftdata:
-            print(f'rpm {gtdp.rpm:.0f} torque N/A slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f} count {config.we_beep_max-self.we_beeped+1}')
+            print(f'rpm {gtdp.current_engine_rpm:.0f} in_gear {gtdp.in_gear} throttle {gtdp.throttle} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f} count {config.we_beep_max-self.we_beeped+1}')
             self.we_beeped -= 1
 
+    #this function is called by the loop whenever a new packet arrives
     def loop_func(self, gtdp):        
         #skip if not racing or gear number outside valid range
+        #cars_on_track is false for replays, maybe add toggle for replays?
         if not(gtdp.cars_on_track and (1 <= int(gtdp.gear) <= MAXGEARS)):
             return
 
-        self.loop_test_car_changed(gtdp) #reset if car ordinal/PI changes
-        self.loop_update_revbar(gtdp) #set revbar min/max rpm
-        self.loop_update_rpm(gtdp) #update tach and hysteresis rpm
-        self.loop_guess_revlimit(gtdp) #guess revlimit if not defined yet
-        self.loop_linreg(gtdp) #update lookahead with hysteresis rpm
-        self.loop_datacollector(gtdp) #add data point for curve collecting
-        self.loop_update_gear(gtdp) #update gear ratio and state of gear
-        # self.loop_calculate_shiftrpms() #derive shift rpm if possible
-        self.loop_test_for_shiftrpm(gtdp) #test if we have shifted
-        self.loop_beep(gtdp) #test if we need to beep
-
-        self.debug_log_full_shiftdata(gtdp)
+        funcs = [
+             'loop_test_car_changed', #reset if car ordinal/PI changes
+             'loop_update_revbar',    #set revbar min/max rpm
+             'loop_update_rpm',       #update tach and hysteresis rpm
+             'loop_guess_revlimit',   #guess revlimit if not defined yet
+             'loop_linreg',           #update lookahead with hysteresis rpm
+             'loop_datacollector',    #add data point for curve collecting
+             'loop_update_gear',      #update gear ratio and state of gear
+           #  'loop_calculate_shiftrpms',#derive shift rpm if possible
+             'loop_test_for_shiftrpm',#test if we have shifted
+             'loop_beep',             #test if we need to beep
+             'debug_log_full_shiftdata'             
+                ]
+        for funcname in funcs:
+            try:
+                getattr(self, funcname)(gtdp)
+            except BaseException as e:
+                print(f'{funcname} {e}')
 
     #TODO: Move the torque ratio function to PowerCurve
     #to account for torque not being flat, we take a linear approach
@@ -419,11 +449,11 @@ class GTBeep():
             self.update_target_rpm(rpm_revlimit_time)
         
         if from_gear and config.log_full_shiftdata:
-            print(f'beep from_gear: {shiftrpm:.0f}, gear {gtdp.gear} rpm {gtdp.rpm:.0f} torque N/A trq_ratio {from_gear_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
+            print(f'beep from_gear: {shiftrpm:.0f}, gear {gtdp.gear} rpm {gtdp.current_engine_rpm:.0f} torque N/A trq_ratio {from_gear_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
         if revlimit_pct and config.log_full_shiftdata:
-            print(f'beep revlimit_pct: {rpm_revlimit_pct:.0f}, gear {gtdp.gear} rpm {gtdp.rpm:.0f} torque N/A trq_ratio {revlimit_pct_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
+            print(f'beep revlimit_pct: {rpm_revlimit_pct:.0f}, gear {gtdp.gear} rpm {gtdp.current_engine_rpm:.0f} torque N/A trq_ratio {revlimit_pct_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
         if revlimit_time and config.log_full_shiftdata:
-            print(f'beep revlimit_time: {rpm_revlimit_time:.0f}, gear {gtdp.gear} rpm {gtdp.rpm:.0f} torque N/A trq_ratio {revlimit_time_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
+            print(f'beep revlimit_time: {rpm_revlimit_time:.0f}, gear {gtdp.gear} rpm {gtdp.current_engine_rpm:.0f} torque N/A trq_ratio {revlimit_time_ratio:.2f} slope {self.lookahead.slope:.2f} intercept {self.lookahead.intercept:.2f}')
 
         return from_gear or revlimit_pct or revlimit_time
 
