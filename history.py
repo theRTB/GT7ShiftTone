@@ -5,23 +5,7 @@ Created on Wed Jul 17 19:59:17 2024
 @author: RTB
 """
 
-#replaced tkinter with supposed thread safe tkinter variant
-#instead of freezing when the main thread isn't under control of tkinter,
-#it now crashes instead. Theoretically, an improvement.
-from mttkinter import mtTkinter as tkinter
-#import tkinter
-import tkinter.ttk
-
 from collections import deque
-
-#tell Windows we are DPI aware
-import ctypes
-PROCESS_SYSTEM_DPI_AWARE = 1
-PROCESS_PER_MONITOR_DPI_AWARE = 2
-ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-
-from config import config, FILENAME_SETTINGS
-config.load_from(FILENAME_SETTINGS)
 
 from utility import packets_to_ms
 
@@ -32,8 +16,12 @@ class History():
         self.history = []
     
     def get_shiftpoint(self, target, shiftrpm, gear, beep_distance):
-        return dict(zip(self.COLUMNS, 
-                    [target, shiftrpm, gear, packets_to_ms(beep_distance)]))
+        data = ['N/A' if target == -1 else int(target),
+              shiftrpm,
+              gear,
+              'N/A' if beep_distance is None else packets_to_ms(beep_distance)]
+                    
+        return dict(zip(self.COLUMNS, data))
     
     def add_shiftdata(self, point):
         self.history.append(point)
@@ -62,6 +50,19 @@ class History():
     #distance between expected and actual distance between beep and shift
     def statistics(self):
         pass
+    
+#replaced tkinter with supposed thread safe tkinter variant
+#instead of freezing when the main thread isn't under control of tkinter,
+#it now crashes instead. Theoretically, an improvement.
+from mttkinter import mtTkinter as tkinter
+#import tkinter
+import tkinter.ttk
+
+#tell Windows we are DPI aware
+import ctypes
+PROCESS_SYSTEM_DPI_AWARE = 1
+PROCESS_PER_MONITOR_DPI_AWARE = 2
+ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
 
 #Setting maxlen>10 requires a manual window height adjustment
 class GUIHistory (History):
