@@ -40,6 +40,8 @@ class GTDataPacket():
         self.current_engine_rpm = struct.unpack('f', ddata[0x3C:0x3C + 4])[0]  # rpm        
         self.speed = struct.unpack('f', ddata[0x4C:0x4C + 4])[0]
         
+        self.boost = struct.unpack('f', ddata[0x50:0x50+4])[0] #no -1
+        
         self.packet_id = struct.unpack('i', ddata[0x70:0x70 + 4])[0]
         
         flags = struct.unpack('B', ddata[0x8E:0x8E + 1])[0]
@@ -56,7 +58,7 @@ class GTDataPacket():
         
         self.clutch = struct.unpack('f', ddata[0xF4:0xF4 + 4])[0]  # clutch
         self.clutch_in = struct.unpack('f', ddata[0xF8:0xF8 + 4])[0]  # clutch
-        self.clutch_rpm = struct.unpack('f', ddata[0xFB:0xFB + 4])[0]  # clutch
+        self.clutch_rpm = struct.unpack('f', ddata[0xFC:0xFC + 4])[0]  # clutch
                 
         #final gear at 0x100?
         
