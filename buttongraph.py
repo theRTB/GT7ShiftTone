@@ -77,15 +77,15 @@ class PowerGraph():
 
         ypeak = peak_power*.90
         #emphasize location of peak power with dotted lines
-        ax.hlines(peak_power, peak_power_rpm*.90, final_rpm,
-                  linestyle='dotted')
+        # ax.hlines(peak_power, peak_power_rpm*.90, final_rpm,
+        #           linestyle='dotted')
         ax.vlines(peak_power_rpm, ypeak, ymax, linestyle='dotted')
 
         #annotate peak power, and power at respected revlimit
         ax.annotate(final_power_label, (final_rpm, final_power),
                     verticalalignment='top', horizontalalignment='left')
-        ax.annotate(peak_power_label, (final_rpm, peak_power),
-                    verticalalignment='center')
+        # ax.annotate(peak_power_label, (final_rpm, peak_power),
+        #             verticalalignment='center')
         ax.annotate(int(peak_power_rpm), (peak_power_rpm, ypeak),
                     verticalalignment='top', horizontalalignment='center')
 
