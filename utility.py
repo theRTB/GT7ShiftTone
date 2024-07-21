@@ -154,6 +154,10 @@ def rolling_avg(y, box_pts, mode='valid'):
 #initial rolling average of 3 points is to correct unusual behavior from for
 #example the Bugatti VGT where the data points oscillate every other point
 #TODO: implement bounds: at the moment only dragrun lower bound works
+#TODO: GT7 power curves are linear interpolation between points per 500 rpm
+#  From 1000 to the closest multiple of 500 near revlimit. Distance between
+#  the next-to-last point to revlimit can be smaller than 500. Do we do
+#  anything with this?
 def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None), 
                 accelrun_bounds=(0, None), smoothing='multi_rolling', 
                 accelrun_smooth=[3,21], sort_rpm=True):
