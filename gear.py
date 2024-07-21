@@ -191,10 +191,11 @@ class Gears():
 
     #call update function of gear 1 to 8. We haven't updated the GUI display
     #because it messes up the available space
-    #add the previous gear
+    #add the previous gear for relative ratio calculation
     def update(self, gtdp):
         for gear, prevgear in zip(self.gears[1:-2], [None] + self.gears[1:-3]):
-            gear.update(gtdp, prevgear)
+            if gtdp.gears[gear.gear] != 0.000:
+                gear.update(gtdp, prevgear)
 
 from mttkinter import mtTkinter as tkinter
 
@@ -214,7 +215,7 @@ class GUIGear (Gear):
     ENTRY_COLORS = {GearState.UNUSED:     ((BG_UNUSED,  BG_UNUSED),
                                            (BG_UNUSED,  BG_UNUSED)),
                     GearState.REACHED:    ((BG_UNUSED,  BG_UNUSED),
-                                           (FG_DEFAULT, BG_REACHED)),
+                                           (BG_UNUSED,  BG_UNUSED)),
                     GearState.LOCKED:     ((BG_REACHED, BG_REACHED),
                                            (FG_DEFAULT, BG_LOCKED)),
                     GearState.CALCULATED: ((FG_DEFAULT, BG_LOCKED),
@@ -254,7 +255,7 @@ class GUIGear (Gear):
             self.shiftrpm_entry.grid(row=starting_row+1, column=column)
             self.relratio_entry.grid(row=starting_row+2, column=column,
                                       columnspan=2)
-        self.variance_entry.grid(row=starting_row+1, column=column)
+        # self.variance_entry.grid(row=starting_row+1, column=column)
 
         #let tkinter memorize grid location, then temporarily hide ratio entry
         self.ratio_entry.grid(row=starting_row+2, column=column)
@@ -264,7 +265,7 @@ class GUIGear (Gear):
         super().reset()
         self.var_bound = None
         self.update_entry_colors()
-        self.variance_entry.grid()
+        # self.variance_entry.grid()
 
     def set_shiftrpm(self, val):
         super().set_shiftrpm(val)
@@ -295,8 +296,8 @@ class GUIGear (Gear):
     def to_next_state(self):
         super().to_next_state()
         self.update_entry_colors()
-        if self.state.at_final():
-            self.variance_entry.grid_remove()
+        # if self.state.at_final():
+        #     self.variance_entry.grid_remove()
 
     def update(self, gtdp, prevgear):
         if self.var_bound is None:
