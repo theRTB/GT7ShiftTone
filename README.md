@@ -3,7 +3,7 @@ It beeps, you shift.
 
 **Windows GUI application to provide a shift tone for Gran Turismo 7.**
 
-![example Subaru WRX STI 2014](images/GUIandPower-2.png)
+![example Subaru WRX STI 2014](images/GUIandPower-3.png)
 
 ## On first launch
 You will need to find and manually set your console IP address into the UI:
@@ -29,6 +29,8 @@ First public version. This program is not yet user friendly and does not save an
 - ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
+- Added database with car names and manufacturers from ddm999 on GitHub
+  - Name is displayed above the power graph
 - Corrected finding the frame of pressing upshift, this assumes 100% throttle. The beep was correctly timed all along.
 - Added window to display a history of shifts, needs more work
 - Added toggle to enable/disable Dynamic Tone Offset (this should no longer be necessary to disable)
@@ -55,7 +57,7 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 
 ## Settings
 
-The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and PS IP. The power curve and gear ratios are not saved.  
+The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and Console IP. The power curve and gear ratios are not saved.  
 Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
 There is one packet per 16.667 milliseconds, approximately.
 
@@ -98,5 +100,5 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then t
 - Some cars have a harsh drop in power and will not hit revlimit at higher gears (Super Formula '23 for example), complicating data gathering
 - Revlimit is marginally above the ingame revlimit in by far most runs. We cannot assume it is a multiple of 100 for non-stock cars so rounding down is out.
 - ~~Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run minus the points smoothed out.~~
-- ~~On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on every launch~~
+- On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on most consecutive launches
 - Linux support is untested
