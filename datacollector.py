@@ -25,7 +25,7 @@ class PowerCurve():
 
     def correct_final_point(self):
         x1, x2 = self.rpm[-2:]
-        print(f'x1 {x1:.3f} x2 {x2:.3f} revlimit {self.revlimit}')
+        # print(f'x1 {x1:.3f} x2 {x2:.3f} revlimit {self.revlimit}')
         np.append(self.rpm, self.revlimit)
         self.rpm = np.append(self.rpm, self.revlimit)
         for name in ['power', 'torque']: #,'boost']:
@@ -33,7 +33,7 @@ class PowerCurve():
             y1, y2 = array[-2:]
             ynew = (y2 - y1) / (x2 - x1) * (self.revlimit - x2) + y2
             setattr(self, name, np.append(array, ynew))
-            print(f'y1 {y1:.3f} y2 {y2:.3f} ynew {ynew:.3f}')
+            # print(f'y1 {y1:.3f} y2 {y2:.3f} ynew {ynew:.3f}')
 
     #get peak power according to peak power rounded to 0.1kW
     #the rounding is necessary to avoid some randomness in collecting a curve
