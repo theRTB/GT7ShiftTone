@@ -73,7 +73,7 @@ class PowerGraph():
         final_power_label = f'{final_power:4.{1 if final_power < 100 else 0}f}'
 
         #override x,y point display in toolbar
-        ax.format_coord = lambda x,y: f'{x:>5.0f} rpm: {y:>4.1f} kW ({y/peak_power:>4.1%})'
+        ax.format_coord = lambda x,y: f'{x:>5.0f} rpm: {y/peak_power:>4.1%} of peak'
 
         ypeak = peak_power*.90
         #emphasize location of peak power with dotted lines
@@ -205,7 +205,7 @@ class PowerWindow():
     #percentage of revlimit
     #window size is explicitly not set: the pyplot will otherwise not scale
     #properly when resizing the window
-    def open(self, curve, revlimit_percent):
+    def open(self, curve, revlimit_percent, carname):
         if self.window is not None:
             return
         self.window = tkinter.Toplevel(self.root)
@@ -229,7 +229,7 @@ class PowerWindow():
         #this is manual entry, automating is possible but very time consuming
         #the carname is added as title when saving the figure
         frame = tkinter.Frame(self.window)
-        carname_var = tkinter.StringVar(value='')
+        carname_var = tkinter.StringVar(value=carname)
         tkinter.Label(frame, text='Car:').pack(side=tkinter.LEFT)
         car_entry = tkinter.Entry(frame, textvariable=carname_var)
         
@@ -280,7 +280,7 @@ class GUIButtonGraph():
         self.button.grid(*args, **kwargs)
 
     #is called by graphbutton_handler in gui if there is a curve
-    def create_window(self, curve, revlimit_percent):
+    def create_window(self, curve, revlimit_percent, carname):
         if curve is None:
             return
-        self.powerwindow.open(curve, revlimit_percent)
+        self.powerwindow.open(curve, revlimit_percent, carname)

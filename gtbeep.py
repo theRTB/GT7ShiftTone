@@ -28,6 +28,7 @@ from gear import Gears, GUIGears, MAXGEARS
 from history import History, GUIHistory
 from lookahead import Lookahead
 from datacollector import DataCollector
+from carordinal import CarOrdinal, GUICarOrdinal
 from gtudploop import GTUDPLoop
 from utility import beep, multi_beep, packets_to_ms, Variable
 from buttongraph import GUIButtonGraph
@@ -90,6 +91,7 @@ class GTBeep():
         self.lookahead = Lookahead(config.linreg_len_min,
                                    config.linreg_len_max)
         self.history = History(config=config)
+        self.car_ordinal = CarOrdinal()
         
         self.we_beeped = 0
         self.beep_counter = 0
@@ -100,8 +102,6 @@ class GTBeep():
         self.curve = None
 
         self.shiftdelay_deque = deque(maxlen=120)
-
-        self.car_ordinal = None
 
     def init_tkinter(self):
         self.root = tkinter.Tk()
@@ -149,6 +149,7 @@ class GTBeep():
         self.revbardata = GUIRevbarData(root)
         self.tach = GUITach(root)
         self.history = GUIHistory(root, config=config)
+        self.car_ordinal = GUICarOrdinal(root)
         
         self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
                                           command=self.reset)
@@ -185,15 +186,19 @@ class GTBeep():
         self.loop.grid(       row=row+1, column=4, rowspan=3, columnspan=3,
                                                              sticky=tkinter.EW)
         self.buttongraph.grid(row=row+1, column=12, rowspan=3)
-                
-        self.buttonreset.grid(row=row+3, column=2)
+        
+        # self.car_ordinal.grid(row=row+3, column=0)
+        self.buttonreset.grid(row=row+3, column=3)
+        
         self.tach.grid(       row=row+4, column=0)
         self.history.grid(    row=row+4, column=12)
 
         self.init_gui_varframe_grid()
 
     def buttongraph_handler(self, event=None):
-        self.buttongraph.create_window(self.curve, self.revlimit_percent.get())
+        self.buttongraph.create_window(self.curve, 
+                                       self.revlimit_percent.get(),
+                                       self.car_ordinal.get_name())
 
     #enable or disable modification of the four listed variable spinboxes
     def edit_handler(self):
@@ -211,14 +216,13 @@ class GTBeep():
         self.debug_target_rpm = -1
         self.curve = None
         
-        self.car_ordinal = None
-
         self.tach.reset()
         self.revlimit.reset()
         self.peakpower.reset()
         self.revbardata.reset()
         self.buttongraph.reset()
         self.history.reset()
+        self.car_ordinal.reset()
 
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter() #should this be reset_to_current_value?
@@ -226,16 +230,18 @@ class GTBeep():
 
         self.gears.reset()
 
-    #reset if the car_ordinal or the PI changes
+    #reset if the car_ordinal changes
     #if a car has more than 8 gears, the packet won't contain the ordinal as
     #the 9th gear will overflow into the car ordinal location
     def loop_test_car_changed(self, gtdp):
-        if gtdp.car_ordinal == 0 or gtdp.car_ordinal > 1e5:
+        ordinal = gtdp.car_ordinal
+        if ordinal == 0 or ordinal > 1e5:
             return
-        if (self.car_ordinal != gtdp.car_ordinal):
+        #update returns true if value has changed
+        if self.car_ordinal.test(ordinal):
             self.reset()
-            self.car_ordinal = gtdp.car_ordinal
-            print(f'New ordinal {self.car_ordinal}, PP Unknown: resetting!')
+            self.car_ordinal.set(ordinal)
+            print(f'New ordinal {self.car_ordinal.get()}, resetting!')
             print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
             print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
             #TODO:
