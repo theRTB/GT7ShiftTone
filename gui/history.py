@@ -7,50 +7,6 @@ Created on Wed Jul 17 19:59:17 2024
 
 from collections import deque
 
-from utility import packets_to_ms
-
-class History():
-    COLUMNS = ['target', 'shiftrpm', 'gear', 'beep_distance']
-    def __init__(self, config):
-        self.log_basic_shiftdata = config.log_basic_shiftdata
-        self.history = []
-    
-    def get_shiftpoint(self, target, shiftrpm, gear, beep_distance):
-        data = ['N/A' if target == -1 else int(target),
-              shiftrpm,
-              gear,
-              'N/A' if beep_distance is None else packets_to_ms(beep_distance)]
-                    
-        return dict(zip(self.COLUMNS, data))
-    
-    def add_shiftdata(self, point):
-        self.history.append(point)
-    
-    def debug_log_basic_shiftdata(self, target, shiftrpm, gear, 
-                                  beep_distance):
-        # target = self.debug_target_rpm
-        difference = 'N/A' if target == -1 else f'{shiftrpm - target:4.0f}'
-        beep_distance_ms = 'N/A'
-        if beep_distance is not None:
-            beep_distance_ms = packets_to_ms(beep_distance)
-        print(f"gear {gear-1}-{gear}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
-        print("-"*50)
-    
-    def update(self, target, shiftrpm, gear, beep_distance):
-        point = self.get_shiftpoint(target, shiftrpm, gear, beep_distance)
-        self.add_shiftdata(point)
-        if self.log_basic_shiftdata:
-            self.debug_log_basic_shiftdata(target, shiftrpm, gear, 
-                                           beep_distance)
-
-    def reset(self):
-        self.history.clear()
-    
-    #display statistics on difference between target and actual
-    #distance between expected and actual distance between beep and shift
-    def statistics(self):
-        pass
-    
 #replaced tkinter with supposed thread safe tkinter variant
 #instead of freezing when the main thread isn't under control of tkinter,
 #it now crashes instead. Theoretically, an improvement.
@@ -63,6 +19,8 @@ import ctypes
 PROCESS_SYSTEM_DPI_AWARE = 1
 PROCESS_PER_MONITOR_DPI_AWARE = 2
 ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
+
+from base.history import History
 
 #Setting maxlen>10 requires a manual window height adjustment
 class GUIHistory (History):
@@ -89,8 +47,9 @@ class GUIHistory (History):
     #Get x and y coordinates to place graph underneath the main window.
     #This may not scale arbitrarily with varying border sizes and title sizes
     def get_windowoffsets(self):
-        return (self.root.winfo_x() + self.root.winfo_width(),  
-                self.root.winfo_y())
+        root = self.root.winfo_toplevel()
+        return (root.winfo_x() + root.winfo_width(),  
+                root.winfo_y())
 
     def create_table(self):
         HEADER_SIZE, ROW_SIZE = 15, 13

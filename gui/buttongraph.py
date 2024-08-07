@@ -170,7 +170,7 @@ class PowerWindow():
     TITLE = "GTShiftTone: Power graph"
 
     #target width and height of the graph, not the window
-    WIDTH, HEIGHT= 813, 500
+    WIDTH, HEIGHT= 815, 500
     FIGURE_DPI = 72
 
     #round various RPM values to nearest value of ROUND
@@ -187,8 +187,9 @@ class PowerWindow():
     #Get x and y coordinates to place graph underneath the main window.
     #This may not scale arbitrarily with varying border sizes and title sizes
     def get_windowoffsets(self):
-        return (self.root.winfo_x(),  #why not rootx?
-                self.root.winfo_rooty() + self.root.winfo_height())
+        root = self.root.winfo_toplevel() #get true toplevel widget
+        return (root.winfo_x(),  #why not rootx?
+                root.winfo_rooty() + root.winfo_height())
 
     #100% scaling is 96 dpi in Windows, matplotlib defaults to 72 dpi
     #window_scalar allows the user to scale the window up or down

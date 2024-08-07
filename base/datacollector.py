@@ -5,52 +5,11 @@ Created on Mon Mar 18 21:26:19 2024
 @author: RTB
 """
 import numpy as np
-from utility import rolling_avg, np_drag_fit
 
-#poorly named: does not extend Curve
-#Given an array of consecutive rpm/accel points at full throttle and an array
-#of consecutive accel points with the clutch disengaged we can derive a torque
-#curve and thus a power curve.
-#TODO: Do we round revlimit? It is generally above true revlimit.
-#At stock, revlimit is a multiple of 100, but upgrades can be things like 3%
-#more revs and make it a random number. 
-#Appending a single value to an np.array is not efficient
-class PowerCurve():
-    def __init__(self, accelrun, dragrun, *args, **kwargs):
-        result = np_drag_fit(accelrun, dragrun, *args, **kwargs)
-        self.revlimit = accelrun.revlimit
-        self.rpm, self.torque, self.power = result
-
-        self.correct_final_point()
-
-    def correct_final_point(self):
-        x1, x2 = self.rpm[-2:]
-        # print(f'x1 {x1:.3f} x2 {x2:.3f} revlimit {self.revlimit}')
-        np.append(self.rpm, self.revlimit)
-        self.rpm = np.append(self.rpm, self.revlimit)
-        for name in ['power', 'torque']: #,'boost']:
-            array = getattr(self, name)
-            y1, y2 = array[-2:]
-            ynew = (y2 - y1) / (x2 - x1) * (self.revlimit - x2) + y2
-            setattr(self, name, np.append(array, ynew))
-            # print(f'y1 {y1:.3f} y2 {y2:.3f} ynew {ynew:.3f}')
-
-    #get peak power according to peak power rounded to 0.1kW
-    #the rounding is necessary to avoid some randomness in collecting a curve
-    def get_peakpower_tuple(self, decimals=-2):
-        power_rounded = np.round(self.power, decimals) #100W -> 0.1kW accuracy
-        index = np.argmax(power_rounded)
-        return (self.rpm[index], max(power_rounded))
-
-    def get_revlimit(self):
-        return self.rpm[-1]
-
-    #TODO: linear interpolation and possibly extrapolation
-    def torque_at_rpm(self, target_rpm):
-        i = np.argmin(np.abs(self.rpm - target_rpm))
-        return self.torque[i]
+from utility import rolling_avg, PowerCurve
 
 #can be initialized from a Curve or an array of GTDataPacket
+#TODO: rename to something like GTDPNPArray?
 class Curve ():
     def __init__(self, packets):
         if type(packets) == list:
@@ -126,7 +85,7 @@ class VTACurve(Curve):
 
     #derive acceleration from v using the packet numbers as time base
     def derive_ta(self):
-        self.t = self.time_id / 60
+        self.t = self.time_id / self.TICRATE
         # self.t2 = np.linspace(0, (len(self.v)-1)/60, len(self.v))
         self.a = np.gradient(self.v, self.t)
 
@@ -206,10 +165,10 @@ class GTDragCollector():
 #collects an array of packets at full throttle
 #if the user lets go of throttle, changes gear: reset
 #revlimit is confirmed by:
-    #20 consecutive points under the maximum rpm registered at full throttle
+    #15 consecutive points under the maximum rpm registered at full throttle
 class GTAccelCollector():
     MINLEN = 90
-    OVERFLOW = 20 #return x points after peak rpm in curve
+    OVERFLOW = 15 #return x points after peak rpm in curve
 
     def __init__(self, keep_overflow=True):
         self.run = []
@@ -335,31 +294,3 @@ class DataCollector():
 
     def get_curve(self):
         return PowerCurve(self.accelrun, self.dragrun)
-
-    # #in case we run the DataCollector on its own
-    # def start(self):
-    #     self.loop = GTUDPLoop(target_ip=PS5_IP,
-    #                           loop_func=self.loop_func)
-    #     self.loop.toggle(True)
-
-    # def finish(self):
-    #     if self.accelrun is not None and self.dragrun is not None:
-    #         shape = np_drag_fit(self.accelrun, self.dragrun)
-    #         rpm_shape, torque_shape, power_shape = shape
-    #         self.rpm_shape = rpm_shape
-    #         self.torque_shape = torque_shape
-    #         self.power_shape = power_shape
-    #         #TODO: do something with these
-
-    # def quitter(self, gtdp):
-    #     # if ((hasattr(dp, 'handbrake') and dp.handbrake > 0) or
-    #     #     (hasattr(dp, 'handbrake') and dp.handbrake > 0)):
-    #     if self.accelrun is not None and self.dragrun is not None:
-    #         self.loop.close()
-    #         print("We quit!")
-
-    # #in case we run the DataCollector on its own
-    # def loop_func(self, gtdp):
-    #     self.loop_runcollector(gtdp)
-    #     self.loop_dragcollector(gtdp)
-    #     self.quitter(gtdp)

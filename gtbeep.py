@@ -13,6 +13,10 @@ from mttkinter import mtTkinter as tkinter
 import tkinter.ttk
 
 import math
+from os.path import exists
+from os import makedirs
+makedirs('curves/', exist_ok=True) #create curves folder if not exists
+
 from collections import deque
 
 #tell Windows we are DPI aware
@@ -24,27 +28,56 @@ ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
 from config import config, FILENAME_SETTINGS
 config.load_from(FILENAME_SETTINGS)
 
-from gear import Gears, GUIGears, MAXGEARS
-from history import History, GUIHistory
-from lookahead import Lookahead
-from datacollector import DataCollector
-from carordinal import CarOrdinal, GUICarOrdinal
-from gtudploop import GTUDPLoop
-from utility import beep, multi_beep, packets_to_ms, Variable
-from buttongraph import GUIButtonGraph
-from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
-                          GUIHysteresisPercent, GUIRevlimit, GUIVolume, 
-                          GUIPeakPower, GUITach, GUIButtonVarEdit, 
-                          GUIRevbarData, GUIButtonDynamicToggle, GUIGTUDPLoop)
+from base.gtudploop import GTUDPLoop
+from base.rpm import RPM
+from base.history import History
+from base.carordinal import CarOrdinal
+from base.gear import Gears, MAXGEARS
+from base.configvar import (HysteresisPercent, DynamicToneOffsetToggle, Volume,
+                            RevlimitPercent, RevlimitOffset, ToneOffset)
+from base.lookahead import Lookahead
+from base.datacollector import DataCollector
+
+from gui.gtudploop import GUIGTUDPLoop
+from gui.rpm import GUIRPM
+from gui.history import GUIHistory
+from gui.carordinal import GUICarOrdinal
+from gui.gear import GUIGears
+from gui.configvar import (GUIPeakPower, GUIToneOffset, GUIRevbarData,
+                           GUIRevlimit, GUIVolume, GUIConfigButton)
+from gui.buttongraph import GUIButtonGraph
+
+from utility import beep, multi_beep, Variable, PowerCurve
+
 #TODO:
     #Save feature: Save curve as json to load when car id is readable
+    #drag fit now outputs a curve with 100 point intervals (changable)
+    # this is through nearest point interpolation, without any using regression
+    # this could be improved
     #Copy button: open Textbox with various stats pasted for copy and paste
-    #Extend power curve for the RPMs that are lost when applying the rolling
-    #average. Use the function from FH version.
     #Create an acceleration curve per gear for a more accurate prediction
     #using the Lookahead slope_factor which is currently used for torque only
     #This will depend on slip ratio because engine rpm and velocity are not
-    #strictly linear
+    # strictly linear
+    #Test the duration of coasting required for accurate values
+        #The [1,2] exponent gives an arbitrarily good fit with coasting
+        #add a beep once enough coasting has been done?
+            # preferably speed based because we depend on having an accurate
+            # interval to fit a polynomial to
+    #Turn PowerCurve object into GUICurve
+    #Grey out gear 9 and 10: non-functional for GT7
+    #Save gearing
+    #Write script to download csv files for database
+    #Add toggle: Include replays (don't check for cars_on_track bool)
+    #also skip when paused or loading
+    #Test if window scalar config variable works as expected
+    #Test if changing dpi works as expected
+    #For all windows: if button is pressed and window is already present:
+        # Force to front
+    #Maybe phase out Settings window to extend main window to the right?
+    #Grid variables into those
+    #Brief shift history of the last 5 shifts or so in main window?
+    #Remove beep for highest gear. With GT7 we know which one this is
 
 #NOTES:
     #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
@@ -60,7 +93,6 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
     #Turbo boolean can be used to imply to shift a little beyond the given
     #shift points. Maybe detect maximum boost? The higher the boost the worse
     #the penalty to shifting.
-    
 
 
 #main class for ForzaShiftTone
@@ -70,7 +102,7 @@ from guiconfigvar import (GUIRevlimitPercent, GUIRevlimitOffset, GUIToneOffset,
 #seconds after launching, despite the back-end still updating
 class GTBeep():
     TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
-    WIDTH, HEIGHT = 813, 289 #most recent dump of size at 150% scaling
+    WIDTH, HEIGHT = 815, 239 #most recent dump of size at 150% scaling
     
     def __init__(self):
         self.init_vars()
@@ -78,7 +110,7 @@ class GTBeep():
         self.init_gui_vars()
         self.init_gui_grid()
         
-        self.loop.firststart() #trigger start of loop given IP address
+        # self.loop.firststart() #trigger start of loop given IP address
         self.root.mainloop()
 
     #variables are defined again in init_gui_vars, purpose is to split baseline
@@ -87,17 +119,25 @@ class GTBeep():
         self.loop = GTUDPLoop(target_ip=config.target_ip, 
                               loop_func=self.loop_func)
         self.gears = Gears()
-        self.datacollector = DataCollector(config=config)
-        self.lookahead = Lookahead(config.linreg_len_min,
-                                   config.linreg_len_max)
-        self.history = History(config=config)
+        self.datacollector = DataCollector(config)
+        self.lookahead = Lookahead(config)
+        self.history = History(config)
+        
         self.car_ordinal = CarOrdinal()
+        
+        self.tone_offset = ToneOffset(config)
+        self.hysteresis_percent = HysteresisPercent(config)
+        self.revlimit_percent = RevlimitPercent(config)
+        self.revlimit_offset = RevlimitOffset(config)
+        self.dynamictoneoffset = DynamicToneOffsetToggle(config)
+        
+        self.rpm = RPM(hysteresis_percent=self.hysteresis_percent)
+        self.volume = Volume(config)
         
         self.we_beeped = 0
         self.beep_counter = 0
         self.debug_target_rpm = -1
         self.revlimit = Variable(defaultvalue=-1)
-        self.rpm_hysteresis = 0
         
         self.curve = None
 
@@ -127,85 +167,73 @@ class GTBeep():
         self.root.tk.call('tk', 'scaling', dpi_factor)
         # self.root.attributes('-toolwindow', True) #force on top
 
-    def init_gui_varframe(self):
-        frame = tkinter.LabelFrame(self.root, text='Variables')
-        self.varframe = frame
+    def init_gui_buttonframe(self):
+        frame = tkinter.Frame(self.root)
         
-        self.tone_offset = GUIToneOffset(frame, config)
-        self.hysteresis_percent = GUIHysteresisPercent(frame, config)
-        self.revlimit_percent = GUIRevlimitPercent(frame, config)
-        self.revlimit_offset = GUIRevlimitOffset(frame, config)
-        self.buttonvaredit = GUIButtonVarEdit(frame, self.edit_handler)
-        self.dynamictoneoffset = GUIButtonDynamicToggle(frame, config)
-        self.buttonvaredit.invoke() #trigger disabling of var boxes
-
+        variables = ['hysteresis_percent', 'revlimit_percent', 
+                     'revlimit_offset', 'dynamictoneoffset']
+        adjustables = {name:getattr(self, name) for name in variables}
+        self.buttonconfig = GUIConfigButton(frame, config, adjustables)
+        self.buttonreset = tkinter.Button(frame, text='Reset', borderwidth=3, 
+                                          command=self.reset)
+        self.history = GUIHistory(frame, config=config)
+        
+        self.buttonframe = frame
+        
     def init_gui_vars(self):
         root = self.root
         self.loop = GUIGTUDPLoop(root, config, loop_func=self.loop_func)
+        
         self.gears = GUIGears(root)
         self.revlimit = GUIRevlimit(root, defaultvalue=-1)
-        self.volume = GUIVolume(root, value=config.volume)
+        
+        self.tone_offset = GUIToneOffset(root, config)
+        
+        self.rpm = GUIRPM(root, hysteresis_percent=self.hysteresis_percent)
+        self.volume = GUIVolume(root, config)
         self.peakpower = GUIPeakPower(root)
         self.revbardata = GUIRevbarData(root)
-        self.tach = GUITach(root)
-        self.history = GUIHistory(root, config=config)
         self.car_ordinal = GUICarOrdinal(root)
-        
-        self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
-                                          command=self.reset)
         
         self.buttongraph = GUIButtonGraph(root, self.buttongraph_handler, 
                                           config)
         
-        self.init_gui_varframe()
+        self.init_gui_buttonframe()
 
-    def init_gui_varframe_grid(self):
-        self.tone_offset.grid(       row=0, column=0)
-        self.hysteresis_percent.grid(row=1, column=0)
-        self.revlimit_percent.grid(  row=2, column=0)
-        self.revlimit_offset.grid(   row=3, column=0)
-        
-        self.buttonvaredit.grid(     row=0, column=3)
-        self.dynamictoneoffset.grid( row=5, column=0, columnspan=3)
+    def init_gui_grid_buttonframe(self):
+        self.buttonconfig.grid(row=0, column=0)
+        self.buttonreset.grid( row=0, column=1)
+        self.history.grid(     row=0, column=2)
 
     def init_gui_grid(self):
         self.gears.init_grid()
         row = GUIGears.ROW_COUNT #start from row below gear display
         
         #force minimum row size for other rows
-        self.root.rowconfigure(index=row+3, weight=1000)
+        # self.root.rowconfigure(index=row+3, weight=1000)
         
-        self.volume.grid(     row=0,     column=12, rowspan=4)         
+        self.volume.grid(      row=0,     column=12, rowspan=4)         
        
-        self.revlimit.grid(   row=row,   column=0)    
-        self.revbardata.grid( row=row,   column=3)
-        self.varframe.grid(   row=row,   column=7, rowspan=5, columnspan=4, 
-                                                            sticky=tkinter.EW)
+        self.revlimit.grid(    row=row,   column=0)  
+        self.revbardata.grid(  row=row,   column=3)
+        self.loop.grid(        row=row,   column=8,  rowspan=3, columnspan=3,
+                                                             sticky=tkinter.EW)  
         
-        self.peakpower.grid(  row=row+1, column=0)   
-        self.loop.grid(       row=row+1, column=4, rowspan=3, columnspan=3,
-                                                             sticky=tkinter.EW)
-        self.buttongraph.grid(row=row+1, column=12, rowspan=3)
+        self.peakpower.grid(   row=row+1, column=0)           
+        self.buttonframe.grid( row=row+1, column=4,             columnspan=4)        
+        self.buttongraph.grid( row=row+1, column=12, rowspan=3)
         
-        # self.car_ordinal.grid(row=row+3, column=0)
-        self.buttonreset.grid(row=row+3, column=3)
+        self.init_gui_grid_buttonframe()
         
-        self.tach.grid(       row=row+4, column=0)
-        self.history.grid(    row=row+4, column=12)
-
-        self.init_gui_varframe_grid()
+        self.rpm.grid(         row=row+3, column=0)
+        self.tone_offset.grid( row=row+3, column=3)
+        self.car_ordinal.grid(row=row+3, column=7)
+        
 
     def buttongraph_handler(self, event=None):
         self.buttongraph.create_window(self.curve, 
                                        self.revlimit_percent.get(),
                                        self.car_ordinal.get_name())
-
-    #enable or disable modification of the four listed variable spinboxes
-    def edit_handler(self):
-        state = 'readonly' if self.buttonvaredit.get() else tkinter.DISABLED
-        for var in [self.revlimit_offset, self.revlimit_percent,
-                    self.tone_offset, self.hysteresis_percent]:
-            var.config(state=state)
 
     def reset(self, *args):
         self.datacollector.reset()
@@ -216,7 +244,7 @@ class GTBeep():
         self.debug_target_rpm = -1
         self.curve = None
         
-        self.tach.reset()
+        self.rpm.reset()
         self.revlimit.reset()
         self.peakpower.reset()
         self.revbardata.reset()
@@ -226,26 +254,55 @@ class GTBeep():
 
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter() #should this be reset_to_current_value?
-        self.rpm_hysteresis = 0
 
         self.gears.reset()
 
+    def set_curve(self, curve):
+        self.curve = curve
+        self.revlimit.set(curve.get_revlimit())        
+        self.peakpower.set(*curve.get_peakpower_tuple())        
+        self.buttongraph.enable()        
+        self.gears.calculate_shiftrpms(curve.rpm, curve.power)
+        
+        if config.notification_power_enabled:
+            multi_beep(config.notification_file,
+                       config.notification_file_duration,
+                       config.notification_power_count,
+                       config.notification_power_delay)
+            
+    #if there exists a saved curve:
+    # - load curve
+    # - update gear ratios (we need gtdp for this)
+    # - determine shift rpms
+    def handle_curve_load(self, gtdp):
+        filename = f'curves/{self.car_ordinal.get()}.tsv'
+        if not exists(filename):
+            return
+        
+        curve = PowerCurve(filename=filename)
+        
+        print('File exists, setting gear ratios')
+        self.loop_update_gear(gtdp)
+        
+        print('File exists, loading curve')
+        self.set_curve(curve)
+        
     #reset if the car_ordinal changes
     #if a car has more than 8 gears, the packet won't contain the ordinal as
     #the 9th gear will overflow into the car ordinal location
     def loop_test_car_changed(self, gtdp):
         ordinal = gtdp.car_ordinal
-        if ordinal == 0 or ordinal > 1e5:
+        if ordinal <= 0 or ordinal > 1e5:
             return
-        #update returns true if value has changed
+        
         if self.car_ordinal.test(ordinal):
             self.reset()
             self.car_ordinal.set(ordinal)
             print(f'New ordinal {self.car_ordinal.get()}, resetting!')
             print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
             print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
-            #TODO:
-                #Find and load the appropriately named json file for data
+            
+            self.handle_curve_load(gtdp)
 
     def loop_update_revbar(self, gtdp):
         self.revbardata.update(gtdp.upshift_rpm)
@@ -253,13 +310,7 @@ class GTBeep():
     #update internal rpm taking the hysteresis value into account:
     #only update if the difference between previous and current rpm is large
     def loop_update_rpm(self, gtdp):
-        rpm = gtdp.current_engine_rpm
-        
-        hysteresis = self.hysteresis_percent.as_rpm(gtdp)
-        if abs(rpm - self.rpm_hysteresis) >= hysteresis:
-            self.rpm_hysteresis = rpm
-
-        self.tach.update(rpm)
+        self.rpm.update(gtdp)
 
     #Not currently used
     def loop_guess_revlimit(self, gtdp):
@@ -269,30 +320,29 @@ class GTBeep():
             print(f'guess revlimit: {self.revlimit.get()}')    
 
     def loop_linreg(self, gtdp):
-        self.lookahead.add(self.rpm_hysteresis) #update linear regresion
+        self.lookahead.add(self.rpm.get()) #update linear regresion
 
-    def loop_datacollector_setcurve(self):
-        self.curve = self.datacollector.get_curve()
-        self.revlimit.set(self.curve.get_revlimit())
-        self.peakpower.set(*self.curve.get_peakpower_tuple())
-        self.buttongraph.enable()
+    def save_curve(self):
+        filename = f'curves/{self.car_ordinal.get()}.tsv'
         
-        if config.notification_power_enabled:
-            multi_beep(config.notification_file,
-                       config.notification_file_duration,
-                       config.notification_power_count,
-                       config.notification_power_delay)
-            
+        if self.curve.save(filename):
+            print('Curve saved to file')
+        else:
+            print('Failed to save curve!')
+
     #grab curve if we collected a complete run
     def loop_datacollector(self, gtdp):
+        if self.curve is not None:
+            return
+        
         self.datacollector.update(gtdp)
 
         if not self.datacollector.is_run_completed():
             return
 
-        if self.curve is None:
-            self.loop_datacollector_setcurve()
-            self.gears.calculate_shiftrpms(self.curve.rpm, self.curve.power)
+        #state: self.curve is None and datacollector run is completed
+        self.set_curve(self.datacollector.get_curve())
+        self.save_curve()
 
     def loop_update_gear(self, gtdp):
         self.gears.update(gtdp)
@@ -468,9 +518,12 @@ class GTBeep():
         #grab x,y position to save as window_x and window_y
         self.window_x = Variable(self.root.winfo_x())
         self.window_y = Variable(self.root.winfo_y())
-                
+        
+        #Used to update WIDTH and HEIGHT if necessary
+        # print(f'x {self.root.winfo_width()}, y {self.root.winfo_height()}')
+        
         #hack to get ip from loop
-        self.target_ip = self.loop.gui_ip
+        self.target_ip = Variable(self.loop.get_target_ip())
         
         try:
             gui_vars = ['revlimit_percent', 'revlimit_offset', 'tone_offset',

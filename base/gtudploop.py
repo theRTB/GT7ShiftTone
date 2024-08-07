@@ -8,7 +8,8 @@ Created on Mon Feb 19 20:46:18 2024
 import socket
 from threading import Timer
 from concurrent.futures.thread import ThreadPoolExecutor
-from gtdatapacket import GTDataPacket
+
+from base.gtdatapacket import GTDataPacket
 
 #TODO:
 # - use ipaddress library for target_ip
@@ -100,6 +101,10 @@ class GTUDPLoop():
         except BaseException as e:
             print(e)
 
+    def get_target_ip(self):
+        return self.target_ip
+
+    #no check on target_ip is a valid IPv4 address
     def set_target_ip(self, target_ip):
         self.target_ip = target_ip
 

@@ -43,15 +43,15 @@ class GTDataPacket():
         self.boost = struct.unpack('f', ddata[0x50:0x50+4])[0] #no -1
         
         self.packet_id = struct.unpack('i', ddata[0x70:0x70 + 4])[0]
+            
+        self.upshift_rpm = struct.unpack('H', ddata[0x88:0x88 + 2])[0]  # rpm rev warning
+        self.engine_max_rpm = struct.unpack('H', ddata[0x8A:0x8A + 2])[0]
         
         flags = struct.unpack('B', ddata[0x8E:0x8E + 1])[0]
         for i, varname in enumerate(self.FLAGNAMES):
             flag = bool(1<<i & flags)
             setattr(self, f'{varname}', flag)
             
-        self.upshift_rpm = struct.unpack('H', ddata[0x88:0x88 + 2])[0]  # rpm rev warning
-        self.engine_max_rpm = struct.unpack('H', ddata[0x8A:0x8A + 2])[0]
-        
         self.gear = struct.unpack('B', ddata[0x90:0x90 + 1])[0] & 0b00001111
         self.throttle = struct.unpack('B', ddata[0x91:0x91 + 1])[0]  # throttle 
         self.brake = struct.unpack('B', ddata[0x92:0x92 + 1])[0] 
@@ -76,20 +76,6 @@ class GTDataPacket():
         # props = [(name, getattr(self, name)) for name in self.PROPS]
         # flagnames = [f'{name}' for name in self.FLAGNAMES]
         return self.FLAGNAMES + self.PROPS
-    
-    # def get_flag(self, name):
-    #     flagname = f'{name}'
-    #     if hasattr(self, flagname):
-    #         return flagname, getattr(self, flagname)
-    #     else:
-    #         return None
-
-    # def printflags(self, subset=[]):
-    #     is_subset = set(subset).issubset(self.FLAGNAMES)
-    #     flagnames = subset if subset and is_subset else self.FLAGNAMES
-    #     for name in flagnames:
-    #         flagname, value = self.get_flag(name)
-    #         print(f'{name:>13}:{value}')
     
     #From https://github.com/snipem/gt7dashboard/blob/main/gt7dashboard/gt7communication.py
     @staticmethod
