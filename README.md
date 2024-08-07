@@ -9,7 +9,7 @@ It beeps, you shift.
 You will need to find and manually set your console IP address into the UI:
 - Find the IP address by going to the PS Settings -> Network -> Connection Status -> View Connection Status -> IPv4 address
 - Enter this IPv4 address into the PS IP entry box then hit Start
-- After this, GT7ShiftTone will automatically connect to this address and autostart
+  - After this, GT7ShiftTone will automatically connect to this address and autostart
 
 ## Steps
 - Load into Special Route X Time Trial, drive past the first tunnel (with the finish line)
@@ -21,7 +21,7 @@ You will need to find and manually set your console IP address into the UI:
 - Be aware that false positives exist: not every beep is an upshift.
 
 ## Current release
-First public version. This program is not yet user friendly and does not save any car data yet.
+Revised first public version. This program is not yet user friendly.
 
 ### Launch with:
 - gtbeep.py: For Python users  
@@ -29,14 +29,7 @@ First public version. This program is not yet user friendly and does not save an
 - ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
-- Added database with car names and manufacturers from ddm999 on GitHub
-  - Name is displayed above the power graph
-- Corrected finding the frame of pressing upshift, this assumes 100% throttle. The beep was correctly timed all along.
-- Added window to display a history of shifts, needs more work
-- Added toggle to enable/disable Dynamic Tone Offset (this should no longer be necessary to disable)
-- Added status message on the state of the connection with GT7
-- Added revbar range (starts at 85% and ends at 99% of the telemetry value)
-  - The telemetry upshift value can differ from the value listed in the Transmission page: Transmission value will be wrong
+- Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file).
 
 ## Implementation
 
@@ -55,17 +48,12 @@ There are three triggers for the shift tone:
 The delay between beep triggers is currently set to 0.5 seconds. This time-out is shared between the three triggers.  
 If you choose to not shift and remain above the trigger RPM, the program will not beep again even if revlimit is hit.
 
-## Settings
-
-The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and Console IP. The power curve and gear ratios are not saved.  
-Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
-There is one packet per 16.667 milliseconds, approximately.
 
 ### General display values:
 
 - **Revlimit**: The limit on engine RPM by its own power. Revlimit is derived upon finishing a full throttle sweep up to revlimit.
 - **Revbar**: The range in which the revbar lights up. It begins at 85% and starts blinking at 99% of a predetermined value, generally equal to the upshift line in the Transmission tuning page but not always
-- **Power**: A guesstimate on which RPM peak power is hit
+- **Power**: A guesstimate on which RPM peak power is hit. If it matches the in-game value, the power curve is probably quite accurate.
 - **Tach**: The current RPM value as reported by the telemetry. Updates 30 times per second.
 
 ### Per gear:
@@ -80,15 +68,23 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then t
 ### General configuration:
 
 - **Tone offset**: Predicted distance between the beep trigger and the trigger RPM value. This should not be taken as reaction time and minimized. It should be regarded as the time you can consistently respond to the tone with the least amount of mental effort. Defaults to 283 ms.
-- **Revlimit %**: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
-- **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
-- **Hysteresis**: Hysteresis may be set as another layer to smooth RPM. An intermediary RPM value is updated only if the change in RPM is larger than the hysteresis value, which is then used for the shift beep tests. Defaults to 0.5% of maximum engine RPM.
-- **Dynamic Tone Offset**: Enables or disables the dynamic updating of the tone offset.
 - **Volume**: Adjusts the volume of the beep in four steps total. Each step is about half as loud as the previous, where the second loudest is the default. A value of 0 mutes only the shift beep.
-- **Edit tickbox**: If unticked, the up and down arrows for the Tone offset, Revlimit ms/% and Hysteresis values do not function. This is to avoid accidental clicks.
 - **Reset button**: If pressed, reset revlimit, power curve and all values for all gears. Configuration values are unchanged. If the UI is unresponsive, restart the application.
 - **Start/Stop button**: Stops or starts the loop to collect packets. In short, if button says "Stop" it is running, if it says "Start" the program is not tracking the game's packets and will not beep.
+- **Shift history**: Displays a table with the last 10 shifts including target RPM, actual shift RPM, gear and measured offset between beep and shift.
 - **View graphs button**: If enabled and pressed, displays a power graph in a separate window. 
+
+In Settings:  
+- **Hysteresis**: Hysteresis may be set as another layer to smooth RPM. An intermediary RPM value is updated only if the change in RPM is larger than the hysteresis value, which is then used for the shift beep tests. Defaults to 0.5% of maximum engine RPM.
+- **Revlimit %**: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
+- **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
+- **Dynamic Tone Offset**: Enables or disables the dynamic updating of the tone offset.
+
+## Settings are saved to config.json
+
+The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and Console IP. The gear ratios are not saved.  
+Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
+There is one packet per 16.667 milliseconds, approximately.
 
 ## Known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
@@ -102,3 +98,4 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then t
 - ~~Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run minus the points smoothed out.~~
 - On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on most consecutive launches
 - Linux support is untested
+- This program 'works for me'. If you wish to run this script and there are issues, please report them.
