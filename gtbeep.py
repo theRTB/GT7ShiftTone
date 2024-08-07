@@ -78,6 +78,8 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #Grid variables into those
     #Brief shift history of the last 5 shifts or so in main window?
     #Remove beep for highest gear. With GT7 we know which one this is
+    #Round shifts to the nearest 25/50
+         # Round up especially if car has a turbo?
 
 #NOTES:
     #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
@@ -347,11 +349,12 @@ class GTBeep():
     def loop_update_gear(self, gtdp):
         self.gears.update(gtdp)
 
-    #Function to derive the rpm the player initiated an upshift
+    #Function to derive the rpm the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
     #not in gear and there is an increase in the gear number, there has been
-    #an upshift. We then run back to the first full throttle packet, because
-    #GT7 first drops power before disengaging the clutch and swapping gear
+    #an upshift. 
+    #We then run back to the first full throttle packet, because GT7 first 
+    #drops power before disengaging the clutch and swapping gear
     #This is not actually visible in telemetry: Clutch is binary instead of
     #a 0 - 1 floating point range.
     def loop_test_for_shiftrpm(self, gtdp):
