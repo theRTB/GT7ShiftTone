@@ -173,7 +173,8 @@ class Gears():
         self.gears = [None] + [Gear(g) for g in self.GEARLIST]
 
     def reset(self):
-       for g in self.gears[1:]:
+        self.highest = None
+        for g in self.gears[1:]:
            g.reset()
 
     def newrun_decrease_state(self):
@@ -185,14 +186,22 @@ class Gears():
             g1.calculate_shiftrpm(rpm, power, g2)
 
     def get_shiftrpm_of(self, gear):
-        if gear > 0:
+        if gear > 0 and gear <= MAXGEARS:
             return self.gears[int(gear)].get_shiftrpm()
         return -1
+
+    def is_highest(self, gearnr):
+        return self.highest == gearnr
 
     #call update function of gear 1 to 8. We haven't updated the GUI display
     #because it messes up the available space
     #add the previous gear for relative ratio calculation
     def update(self, gtdp):
+        highest = 0
         for gear, prevgear in zip(self.gears[1:-2], [None] + self.gears[1:-3]):
             if gtdp.gears[gear.gear] != 0.000:
                 gear.update(gtdp, prevgear)
+                highest += 1
+        if not self.highest:
+            self.highest = highest
+            print(f'Highest gear: {self.highest}')

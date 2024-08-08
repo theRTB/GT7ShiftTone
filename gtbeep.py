@@ -50,7 +50,6 @@ from gui.buttongraph import GUIButtonGraph
 from utility import beep, multi_beep, Variable, PowerCurve
 
 #TODO:
-    #Save feature: Save curve as json to load when car id is readable
     #drag fit now outputs a curve with 100 point intervals (changable)
     # this is through nearest point interpolation, without any using regression
     # this could be improved
@@ -80,6 +79,7 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #Remove beep for highest gear. With GT7 we know which one this is
     #Round shifts to the nearest 25/50
          # Round up especially if car has a turbo?
+    # Automatically determine PS IP through socket or brute force?
 
 #NOTES:
     #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
@@ -112,7 +112,7 @@ class GTBeep():
         self.init_gui_vars()
         self.init_gui_grid()
         
-        # self.loop.firststart() #trigger start of loop given IP address
+        self.loop.firststart() #trigger start of loop given IP address
         self.root.mainloop()
 
     #variables are defined again in init_gui_vars, purpose is to split baseline
@@ -402,6 +402,8 @@ class GTBeep():
             beep(filename=config.sound_files[volume_level])
 
     def loop_beep(self, gtdp):
+        if self.gears.is_highest(gtdp.gear):
+            return #No beep including revlimit in highest gear
         rpm = gtdp.current_engine_rpm
         beep_rpm = self.gears.get_shiftrpm_of(gtdp.gear)
         if self.beep_counter <= 0:
@@ -411,7 +413,7 @@ class GTBeep():
                 self.tone_offset.start_counter()
                 self.do_beep()
             elif rpm < math.ceil(beep_rpm*config.beep_rpm_pct):
-                self.beep_counter = 0
+                self.beep_counter = 0 #consider -= beep_duration
         elif (self.beep_counter > 0 and (rpm < beep_rpm or beep_rpm == -1)):
             self.beep_counter -= 1
 
