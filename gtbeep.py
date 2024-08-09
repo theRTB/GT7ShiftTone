@@ -80,6 +80,7 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #Round shifts to the nearest 25/50
          # Round up especially if car has a turbo?
     # Automatically determine PS IP through socket or brute force?
+    # Investigate y axis on Special Route X: is it really flat?
 
 #NOTES:
     #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
@@ -229,7 +230,7 @@ class GTBeep():
         
         self.rpm.grid(         row=row+3, column=0)
         self.tone_offset.grid( row=row+3, column=3)
-        self.car_ordinal.grid(row=row+3, column=7)
+        self.car_ordinal.grid( row=row+3, column=7)
         
 
     def buttongraph_handler(self, event=None):
@@ -238,26 +239,28 @@ class GTBeep():
                                        self.car_ordinal.get_name())
 
     def reset(self, *args):
-        self.datacollector.reset()
+        self.rpm.reset()
+        self.history.reset()
+        self.car_ordinal.reset()
+        self.gears.reset()
         self.lookahead.reset()
-
+        self.datacollector.reset()
+        self.revlimit.reset()
+        
         self.we_beeped = 0
         self.beep_counter = 0
         self.debug_target_rpm = -1
         self.curve = None
-        
-        self.rpm.reset()
-        self.revlimit.reset()
-        self.peakpower.reset()
-        self.revbardata.reset()
-        self.buttongraph.reset()
-        self.history.reset()
-        self.car_ordinal.reset()
 
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter() #should this be reset_to_current_value?
-
-        self.gears.reset()
+        
+        self.gui_reset() #working towards splitting base and gui
+        
+    def gui_reset(self, *args):
+        self.peakpower.reset()
+        self.revbardata.reset()
+        self.buttongraph.reset()
 
     def set_curve(self, curve):
         self.curve = curve
