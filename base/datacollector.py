@@ -131,7 +131,7 @@ class GTDragCollector():
             if gtdp.handbrake or gtdp.brake > 0:
                 print("RUN RESET HANDBRAKE/BRAKE")
                 self.reset() #back to WAIT
-            elif gtdp.clutch < 1 or gtdp.throttle > 1:
+            elif gtdp.clutch < 1 or gtdp.throttle > 4:
                 print(f"RUN STOP {gtdp.clutch} or {gtdp.throttle}")
                 self.state = 'TEST'
             else:
