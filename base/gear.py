@@ -76,7 +76,7 @@ class Gear():
     #              FWD    RWD    AWD
     VAR_BOUNDS = [1e-04, 1e-04, 1e-04]
 
-    def __init__(self, number):
+    def __init__(self, number, config):
         self.gear = number
         self.state = GearState(label=f'Gear {number}')
         self.ratio_deque = deque(maxlen=self.DEQUE_LEN)
@@ -169,8 +169,8 @@ class Gears():
 
     #first element is None to enable a 1:1 mapping of array to Gear number
     #it could be used as reverse gear but not in a usable manner anyway
-    def __init__(self):
-        self.gears = [None] + [Gear(g) for g in self.GEARLIST]
+    def __init__(self, config):
+        self.gears = [None] + [Gear(g, config) for g in self.GEARLIST]
 
     def reset(self):
         self.highest = None

@@ -81,8 +81,12 @@ class config():
     #draw underfill of >=x% of peak power in the power graph
     graph_power_percentile = 0.9
     
+    #TODO: are these still in use?
     revlimit_round = 50
     revlimit_round_offset = 10
+    
+    #round displayed shift RPM in GUI up to nearest x
+    shiftrpm_round = 25
         
     @classmethod
     def get_dict(cls):

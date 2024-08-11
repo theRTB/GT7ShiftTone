@@ -76,7 +76,6 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #Maybe phase out Settings window to extend main window to the right?
     #Grid variables into those
     #Brief shift history of the last 5 shifts or so in main window?
-    #Remove beep for highest gear. With GT7 we know which one this is
     #Round shifts to the nearest 25/50
          # Round up especially if car has a turbo?
     # Automatically determine PS IP through socket or brute force?
@@ -121,7 +120,7 @@ class GTBeep():
     def init_vars(self):
         self.loop = GTUDPLoop(target_ip=config.target_ip, 
                               loop_func=self.loop_func)
-        self.gears = Gears()
+        self.gears = Gears(config)
         self.datacollector = DataCollector(config)
         self.lookahead = Lookahead(config)
         self.history = History(config)
@@ -187,7 +186,7 @@ class GTBeep():
         root = self.root
         self.loop = GUIGTUDPLoop(root, config, loop_func=self.loop_func)
         
-        self.gears = GUIGears(root)
+        self.gears = GUIGears(root, config)
         self.revlimit = GUIRevlimit(root, defaultvalue=-1)
         
         self.tone_offset = GUIToneOffset(root, config)

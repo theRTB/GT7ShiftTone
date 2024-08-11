@@ -35,9 +35,11 @@ class GUIGear (Gear):
         ENTRY_COLORS[key] = (dict(zip(['fg', 'readonlybackground'], t1)), 
                              dict(zip(['fg', 'readonlybackground'], t2)))
 
-    def __init__(self, number, root):
-        super().__init__(number)
+    def __init__(self, number, root, config):
+        super().__init__(number, config)
         self.var_bound = None
+        self.round = lambda rpm: (math.ceil(rpm / config.shiftrpm_round) 
+                                                * config.shiftrpm_round)
         self.shiftrpm_var = tkinter.IntVar()
         self.ratio_var = tkinter.DoubleVar()
         self.relratio_var = tkinter.StringVar()
@@ -80,7 +82,7 @@ class GUIGear (Gear):
 
     def set_shiftrpm(self, val):
         super().set_shiftrpm(val)
-        self.shiftrpm_var.set(int(val))
+        self.shiftrpm_var.set(self.round(val))
 
     def set_ratio(self, val):
         super().set_ratio(val)
@@ -127,8 +129,8 @@ class GUIGear (Gear):
 class GUIGears(Gears):
     LABEL_WIDTH = 8
     ROW_COUNT = 3 #for ForzaBeep GUI: how many grid rows a gear takes up
-    def __init__(self, root):
-        self.gears = [None] + [GUIGear(g, root) for g in self.GEARLIST]
+    def __init__(self, root, config):
+        self.gears = [None] + [GUIGear(g, root, config) for g in self.GEARLIST]
         
         self.init_window(root)
 
