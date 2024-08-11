@@ -255,7 +255,7 @@ class GTAccelCollector():
 #test with is_run_completed if data is available, then call get_curve to get
 #the power curve
 class DataCollector():
-    def __init__(self, keep_overflow=False, *args, **kwargs):
+    def __init__(self, config, keep_overflow=False, *args, **kwargs):
         self.runcollector = GTAccelCollector(keep_overflow=keep_overflow)
         self.dragcollector = GTDragCollector()
 
