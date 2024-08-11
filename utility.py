@@ -152,9 +152,12 @@ def rolling_avg(y, box_pts, mode='valid'):
 #redefine x, y graph to only have multiples of n as points of x with linear
 #interpolation of y values
 #x is assumed to be sorted and increases monotonically
-def simplify_curve(x, y, n=100):
+#optionally include a 'true' xmax to extend/shorten the curve to
+#the final point of x array is included
+def simplify_curve(x, y, xmax=None, n=100):
+    xmax = x[-1] if xmax is None else xmax
     startx = math.ceil(x[0]/n)*n
-    newx = np.arange(startx, x[-1], n)
+    newx = np.arange(startx, xmax+1, n)
     newy = np.interp(newx, x, y)
     
     return (newx, newy)
@@ -188,7 +191,8 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
     rpm_shape = sorted(accelrun.rpm) if sort_rpm else accelrun.rpm
     
     if interval:
-        rpm, torque = simplify_curve(rpm_shape, torque_shape, interval)
+        rpmmax = max(rpm_shape)
+        rpm, torque = simplify_curve(rpm_shape, torque_shape, rpmmax, interval)
     
     power = torque * rpm
     
@@ -247,7 +251,7 @@ class PowerCurve():
             setattr(self, name, np.append(array, ynew))
             # print(f'y1 {y1:.3f} y2 {y2:.3f} ynew {ynew:.3f}')
 
-    #get peak power according to peak power rounded to 0.1kW
+    #get peak power according to peak power rounded to 0.x
     #the rounding is necessary to avoid some randomness in collecting a curve
     def get_peakpower_tuple(self, decimals=1):
         power_rounded = np.round(self.power, decimals)
