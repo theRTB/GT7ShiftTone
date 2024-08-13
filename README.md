@@ -89,6 +89,7 @@ There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
+- Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation.
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
 - Application will on rare occasions crash: related to the UI library and cannot be fixed
 - ~~Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque. Cannot be fixed.~~

@@ -68,6 +68,9 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #Brief shift history of the last 5 shifts or so in main window?
     #Automatically determine PS IP through socket or brute force?
     #Investigate y axis on Special Route X: is it really flat?
+    # hide 0.00 rel ratio on final gear: add finalgear option somehow
+    # rework row display on shift history: it visibles rotates due to slowness
+    # move to labels instead
     
     # Test if replays work
     # Test if window scalar config variable works as expected
@@ -153,11 +156,11 @@ class GTBeep():
         #we have to fudge width a bit if scaling is 100%
         screen_dpi = self.root.winfo_fpixels('1i')
         dpi_factor = (96/72) * (screen_dpi / 96) * config.window_scalar
-        size_factor = screen_dpi / 144 * config.window_scalar
-        width = math.ceil(self.WIDTH * size_factor)
-        height = math.ceil(self.HEIGHT * size_factor)
-        if screen_dpi <= 96.0:
-            width += 40 #hack for 100% size scaling in Windows
+        # size_factor = screen_dpi / 144 * config.window_scalar
+        # width = math.ceil(self.WIDTH * size_factor)
+        # height = math.ceil(self.HEIGHT * size_factor)
+        # if screen_dpi <= 96.0:
+        #     width += 40 #hack for 100% size scaling in Windows
         
         # self.root.geometry(f"{width}x{height}") #not required
         if config.window_x is not None and config.window_y is not None:
