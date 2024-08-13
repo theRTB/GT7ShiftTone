@@ -138,7 +138,6 @@ class GUIIncludeReplay(GUICheckButton):
 class GUIDynamicToneOffsetToggle(GUICheckButton):
     TEXT = 'Dynamic tone offset'
 
-
 #TODO: see if removing tone_offset_var=self is possible
 #we only need .get and .set, which are from Variable in the end
 class GUIToneOffset(GUIConfigVariable, DynamicToneOffset):

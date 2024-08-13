@@ -474,6 +474,7 @@ class GTBeep():
                 torque_ratio)
 
     #make sure the target_rpm is the lowest rpm trigger of all triggered beeps
+    #used for debug logging
     def update_target_rpm(self, val):
         if self.debug_target_rpm == -1:
             self.debug_target_rpm = val

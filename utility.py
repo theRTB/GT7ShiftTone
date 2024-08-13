@@ -215,7 +215,7 @@ from os.path import exists
 # If this is increasing instead of (normally) decreasing, final point will be
 # further off than it should be
 class PowerCurve():
-    columns = ['rpm', 'power', 'torque']
+    COLUMNS = ['rpm', 'power', 'torque']
     DELIMITER = '\t'
     ENCODING = 'ISO-8859-1' #why not UTF-8?
     def __init__(self, *args, **kwargs):
@@ -274,7 +274,7 @@ class PowerCurve():
             else:
                 print(f'file {filename} already exists, overwriting')
 
-        data = [getattr(self, column) for column in self.columns]
+        data = [getattr(self, column) for column in self.COLUMNS]
         
         #hardcoding adjustment to rpm, power and torque output
         data[0] = [f'{rpm:.0f}' for rpm in data[0]] 
@@ -283,7 +283,7 @@ class PowerCurve():
         
         with open(filename, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=self.DELIMITER)
-            writer.writerow(self.columns)
+            writer.writerow(self.COLUMNS)
             
             #flip array structure from per column to per row before writing
             writer.writerows(zip(*data)) 
