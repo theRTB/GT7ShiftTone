@@ -8,11 +8,10 @@ Created on Wed Aug  2 20:54:19 2023
 import numpy as np
 from mttkinter import mtTkinter as tkinter
 
-from base.configvar import DynamicToneOffset
+from base.configvar import DynamicToneOffset, IncludeReplay
 
 from utility import (packets_to_ms, ms_to_packets, round_to,
                      factor_to_percent, percent_to_factor, Variable)
-
 
 class GUIConfigVariable(Variable):
     def __init__(self, root, name, value, unit, values, convert_from_gui,
@@ -112,16 +111,19 @@ class GUIHysteresisPercent(GUIAdjustable):
                          convert_to_gui=factor_to_percent,
                          values=np.arange(LOWER, UPPER, 0.001), var=var)
 
-class GUIDynamicToneOffsetToggle():
+class GUICheckButton():
+    TEXT = 'GUICheckButton'
+    COLUMNSPAN = 3
     def __init__(self, root, config, var):
         self.var = var
         self.tkvar = tkinter.IntVar(value=var.get())
-        self.button = tkinter.Checkbutton(root, text='Dynamic tone offset', 
+        self.button = tkinter.Checkbutton(root, text=self.TEXT, 
                                           variable=self.tkvar, 
                                           command=self.update)
 
     def grid(self, row, column=0, *args, **kwargs):
-        self.button.grid(row=row, column=column, columnspan=3, *args, **kwargs)
+        self.button.grid(row=row, column=column, columnspan=self.COLUMNSPAN, 
+                         sticky=tkinter.W, *args, **kwargs)
 
     def get(self):
         return self.tkvar.get()
@@ -129,6 +131,13 @@ class GUIDynamicToneOffsetToggle():
     def update(self):
         value = self.get()
         self.var.set(value)
+
+class GUIIncludeReplay(GUICheckButton):
+    TEXT = 'Include replays'
+
+class GUIDynamicToneOffsetToggle(GUICheckButton):
+    TEXT = 'Dynamic tone offset'
+
 
 #TODO: see if removing tone_offset_var=self is possible
 #we only need .get and .set, which are from Variable in the end
@@ -158,62 +167,6 @@ class GUIToneOffset(GUIConfigVariable, DynamicToneOffset):
         super().update()
         self.reset_to_current_value()
         print(f"DynamicToneOffset reset to {self.value}")
-
-# class GUIDynamicToneOffsetToggle():
-#     def __init__(self, root, config):
-#         self.tkvar = tkinter.IntVar(value=config.dynamictoneoffset)
-#         self.button = tkinter.Checkbutton(root, text='Dynamic tone offset', 
-#                                           variable=self.tkvar)
-
-#     def grid(self, row, column, *args, **kwargs):
-#         self.button.grid(row=row, column=column, *args, **kwargs)
-
-#     def get(self):
-#         return self.tkvar.get()
-
-# class GUIRevlimitOffset(GUIConfigVariable):
-#     NAME = 'Revlimit'
-#     UNIT = 'ms'
-
-#     def __init__(self, root, config):
-#         DEFAULTVALUE = config.revlimit_offset
-#         LOWER = config.revlimit_offset_lower
-#         UPPER = config.revlimit_offset_upper
-#         super().__init__(root=root, name=self.NAME, unit=self.UNIT,
-#                          convert_from_gui=ms_to_packets,
-#                          convert_to_gui=packets_to_ms, value=DEFAULTVALUE,
-#                          values=range(LOWER, UPPER+1))
-        
-# class GUIRevlimitPercent(GUIConfigVariable):
-#     NAME = 'Revlimit'
-#     UNIT = '%'
-
-#     def __init__(self, root, config):
-#         DEFAULTVALUE = config.revlimit_percent
-#         LOWER = config.revlimit_percent_lower
-#         UPPER = config.revlimit_percent_upper
-#         super().__init__(root=root, name=self.NAME, unit=self.UNIT,
-#                          convert_from_gui=percent_to_factor,
-#                          convert_to_gui=factor_to_percent,
-#                          values=np.arange(LOWER, UPPER, 0.001),
-#                          value=DEFAULTVALUE)
-    
-# class GUIHysteresisPercent(GUIConfigVariable):
-#     NAME = 'Hysteresis'
-#     UNIT = '%'
-
-#     def __init__(self, root, config):
-#         DEFAULTVALUE = config.hysteresis_percent
-#         LOWER = config.hysteresis_percent_lower
-#         UPPER = config.hysteresis_percent_upper
-#         super().__init__(root=root, name=self.NAME, unit=self.UNIT,
-#                          convert_from_gui=percent_to_factor,
-#                          convert_to_gui=factor_to_percent,
-#                          values=np.arange(LOWER, UPPER, 0.001),
-#                          value=DEFAULTVALUE)
-    
-#     def as_rpm(self, fdp):
-#         return self.get() * fdp.engine_max_rpm
 
 class GUIRevlimit(Variable):
     BG = {'initial':'#F0F0F0', #the possible background colors of the entry
@@ -349,6 +302,7 @@ class GUIRevbarData():
             self.set(f'{value*self.LOWER:5.0f} - {value*self.UPPER:5.0f}')
             self.grabbed_data = True
 
+
 class GUIConfigWindow():
     TITLE='GTShiftTone: Settings'
     
@@ -373,15 +327,19 @@ class GUIConfigWindow():
         classes = {'hysteresis_percent': GUIHysteresisPercent, 
                    'revlimit_percent':   GUIRevlimitPercent,
                    'revlimit_offset':    GUIRevlimitOffset,
-                   'dynamictoneoffset':  GUIDynamicToneOffsetToggle}
+                   'dynamictoneoffset':  GUIDynamicToneOffsetToggle,
+                   'includereplay':      GUIIncludeReplay}
         for row, (name, var) in enumerate(self.adjustables.items()):
             temp = classes[name](self.window, self.config, var)
             temp.grid(row)
             setattr(self, name, temp)
-            
+    
     def open(self):
-        if self.window is not None:
+        if self.window is not None: #force existing window to front
+            self.window.deiconify()
+            self.window.lift()
             return
+        
         self.window = tkinter.Toplevel(self.root)
         self.window.title(self.TITLE)
         self.window.protocol('WM_DELETE_WINDOW', self.close)

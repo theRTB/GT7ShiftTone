@@ -34,7 +34,8 @@ from base.history import History
 from base.carordinal import CarOrdinal
 from base.gear import Gears, MAXGEARS
 from base.configvar import (HysteresisPercent, DynamicToneOffsetToggle, Volume,
-                            RevlimitPercent, RevlimitOffset, ToneOffset)
+                            RevlimitPercent, RevlimitOffset, ToneOffset, 
+                            IncludeReplay)
 from base.lookahead import Lookahead
 from base.datacollector import DataCollector
 
@@ -71,13 +72,9 @@ from utility import beep, multi_beep, Variable, PowerCurve
     #also skip when paused or loading
     #Test if window scalar config variable works as expected
     #Test if changing dpi works as expected
-    #For all windows: if button is pressed and window is already present:
-        # Force to front
     #Maybe phase out Settings window to extend main window to the right?
     #Grid variables into those
     #Brief shift history of the last 5 shifts or so in main window?
-    #Round shifts to the nearest 25/50
-         # Round up especially if car has a turbo?
     # Automatically determine PS IP through socket or brute force?
     # Investigate y axis on Special Route X: is it really flat?
 
@@ -132,6 +129,7 @@ class GTBeep():
         self.revlimit_percent = RevlimitPercent(config)
         self.revlimit_offset = RevlimitOffset(config)
         self.dynamictoneoffset = DynamicToneOffsetToggle(config)
+        self.includereplay = IncludeReplay(config)
         
         self.rpm = RPM(hysteresis_percent=self.hysteresis_percent)
         self.volume = Volume(config)
@@ -173,7 +171,7 @@ class GTBeep():
         frame = tkinter.Frame(self.root)
         
         variables = ['hysteresis_percent', 'revlimit_percent', 
-                     'revlimit_offset', 'dynamictoneoffset']
+                     'revlimit_offset', 'dynamictoneoffset', 'includereplay']
         adjustables = {name:getattr(self, name) for name in variables}
         self.buttonconfig = GUIConfigButton(frame, config, adjustables)
         self.buttonreset = tkinter.Button(frame, text='Reset', borderwidth=3, 
@@ -428,7 +426,9 @@ class GTBeep():
     def loop_func(self, gtdp):        
         #skip if not racing or gear number outside valid range
         #cars_on_track is false for replays, maybe add toggle for replays?
-        if not(gtdp.cars_on_track and (1 <= int(gtdp.gear) <= MAXGEARS)):
+        if not(self.includereplay.test(gtdp) and 
+               (1 <= int(gtdp.gear) <= MAXGEARS) and
+               not gtdp.loading and not gtdp.paused):
             return
 
         funcs = [
@@ -535,7 +535,8 @@ class GTBeep():
         try:
             gui_vars = ['revlimit_percent', 'revlimit_offset', 'tone_offset',
                         'hysteresis_percent', 'volume', 'target_ip', 
-                        'window_x', 'window_y', 'dynamictoneoffset']
+                        'window_x', 'window_y', 'dynamictoneoffset',
+                        'includereplay']
             for variable in gui_vars:
                 setattr(config, variable, getattr(self, variable).get())
             config.write_to(FILENAME_SETTINGS)

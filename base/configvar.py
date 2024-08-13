@@ -112,6 +112,13 @@ class HysteresisPercent(Variable):
     def as_rpm(self, fdp):
         return self.get() * fdp.engine_max_rpm
 
+class IncludeReplay(Variable):
+    def __init__(self, config):
+        super().__init__(defaultvalue=config.includereplay)
+        
+    def test(self, gtdp):
+        return (self.get() or gtdp.cars_on_track)
+
 class DynamicToneOffsetToggle(Variable):
     def __init__(self, config):
         super().__init__(defaultvalue=config.dynamictoneoffset)

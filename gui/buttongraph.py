@@ -207,7 +207,9 @@ class PowerWindow():
     #window size is explicitly not set: the pyplot will otherwise not scale
     #properly when resizing the window
     def open(self, curve, revlimit_percent, carname):
-        if self.window is not None:
+        if self.window is not None: #force existing window to front
+            self.window.deiconify()
+            self.window.lift()
             return
         self.window = tkinter.Toplevel(self.root)
         self.window.title(self.TITLE)

@@ -107,7 +107,9 @@ class GUIHistory (History):
         self.gui_add_shiftdata(point)
         
     def create_window(self):
-        if self.window is not None:
+        if self.window is not None: #force existing window to front
+            self.window.deiconify()
+            self.window.lift()
             return
         self.window = tkinter.Toplevel(self.root)
         self.window.title(self.TITLE)

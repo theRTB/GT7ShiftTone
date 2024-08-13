@@ -87,6 +87,9 @@ class config():
     
     #round displayed shift RPM in GUI up to nearest x
     shiftrpm_round = 25
+    
+    #determine if cars_on_track is considered or not when testing to skip loop
+    includereplay = False
         
     @classmethod
     def get_dict(cls):
