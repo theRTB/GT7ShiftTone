@@ -79,6 +79,7 @@ In Settings:
 - **Revlimit %**: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
 - **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
 - **Dynamic Tone Offset**: Enables or disables the dynamic updating of the tone offset.
+- **Include replays**: Sets the program to function during replays: useful primarily to log shift points in a replay.
 
 ## Settings are saved to config.json
 
@@ -86,7 +87,7 @@ The settings are saved to _config.json_ on exit. This includes Tone offset, Hyst
 Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
 There is one packet per 16.667 milliseconds, approximately.
 
-## Known issues
+## Notes and known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
 - Application will on rare occasions crash: related to the UI library and cannot be fixed

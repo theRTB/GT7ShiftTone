@@ -8,7 +8,7 @@ Created on Wed Aug  2 20:54:19 2023
 import numpy as np
 from mttkinter import mtTkinter as tkinter
 
-from base.configvar import DynamicToneOffset, IncludeReplay
+from base.configvar import DynamicToneOffset
 
 from utility import (packets_to_ms, ms_to_packets, round_to,
                      factor_to_percent, percent_to_factor, Variable)
@@ -286,9 +286,11 @@ class GUIRevbarData():
     
     #sticky and columnspan are not forwarded to the grid function
     def grid(self, column, sticky='', columnspan=1, *args, **kwargs):
-        self.label.grid(column=column, columnspan=1, sticky=tkinter.E, *args, **kwargs)
+        self.label.grid(column=column, columnspan=1, sticky=tkinter.E, 
+                                                               *args, **kwargs)
         self.entry.grid(column=column+1, columnspan=2, *args, **kwargs)
-        self.unit.grid(column=column+3, columnspan=1, sticky=tkinter.W, *args, **kwargs)
+        self.unit.grid(column=column+3, columnspan=1, sticky=tkinter.W, 
+                                                               *args, **kwargs)
     
     def set(self, value):
         self.tkvar.set(value)
@@ -305,6 +307,11 @@ class GUIRevbarData():
 
 class GUIConfigWindow():
     TITLE='GTShiftTone: Settings'
+    CLASSES = { 'hysteresis_percent': GUIHysteresisPercent, 
+                'revlimit_percent':   GUIRevlimitPercent,
+                'revlimit_offset':    GUIRevlimitOffset,
+                'dynamictoneoffset':  GUIDynamicToneOffsetToggle,
+                'includereplay':      GUIIncludeReplay}
     
     def __init__(self, root, config, adjustables):
         self.root = root
@@ -324,15 +331,10 @@ class GUIConfigWindow():
                 root.winfo_rooty() + root.winfo_height())
 
     def handle_adjustables(self):
-        classes = {'hysteresis_percent': GUIHysteresisPercent, 
-                   'revlimit_percent':   GUIRevlimitPercent,
-                   'revlimit_offset':    GUIRevlimitOffset,
-                   'dynamictoneoffset':  GUIDynamicToneOffsetToggle,
-                   'includereplay':      GUIIncludeReplay}
         for row, (name, var) in enumerate(self.adjustables.items()):
-            temp = classes[name](self.window, self.config, var)
-            temp.grid(row)
-            setattr(self, name, temp)
+            gui_var = self.CLASSES[name](self.window, self.config, var)
+            gui_var.grid(row)
+            setattr(self, name, gui_var)
     
     def open(self):
         if self.window is not None: #force existing window to front
@@ -354,6 +356,10 @@ class GUIConfigWindow():
         self.window.destroy()
         self.window = None
 
+    @classmethod
+    def get_names(cls):
+        return list(cls.CLASSES.keys())
+
 #enable button once we have a settings window
 #adjustables is an array of Variables we can display to adjust
 class GUIConfigButton():
@@ -371,3 +377,7 @@ class GUIConfigButton():
     
     def invoke(self):
         self.button.invoke()
+        
+    @classmethod
+    def get_names(cls):
+        return GUIConfigWindow.get_names()

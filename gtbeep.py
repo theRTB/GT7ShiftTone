@@ -56,27 +56,27 @@ from utility import beep, multi_beep, Variable, PowerCurve
     # this could be improved
     #Copy button: open Textbox with various stats pasted for copy and paste
     #Create an acceleration curve per gear for a more accurate prediction
-    #using the Lookahead slope_factor which is currently used for torque only
-    #This will depend on slip ratio because engine rpm and velocity are not
-    # strictly linear
-    #Test the duration of coasting required for accurate values
-        #The [1,2] exponent gives an arbitrarily good fit with coasting
-        #add a beep once enough coasting has been done?
-            # preferably speed based because we depend on having an accurate
-            # interval to fit a polynomial to
+    #  using the Lookahead slope_factor which is currently used for torque only
+    #  This will depend on slip ratio because engine rpm and velocity are not
+    #  strictly linear
     #Turn PowerCurve object into GUICurve
     #Grey out gear 9 and 10: non-functional for GT7
     #Save gearing
     #Write script to download csv files for database
-    #Add toggle: Include replays (don't check for cars_on_track bool)
-    #also skip when paused or loading
-    #Test if window scalar config variable works as expected
-    #Test if changing dpi works as expected
     #Maybe phase out Settings window to extend main window to the right?
     #Grid variables into those
     #Brief shift history of the last 5 shifts or so in main window?
-    # Automatically determine PS IP through socket or brute force?
-    # Investigate y axis on Special Route X: is it really flat?
+    #Automatically determine PS IP through socket or brute force?
+    #Investigate y axis on Special Route X: is it really flat?
+    
+    # Test if replays work
+    # Test if window scalar config variable works as expected
+    # Test if changing dpi works as expected
+    # Test the duration of coasting required for accurate values
+        #The [1,2] exponent gives an arbitrarily good fit with coasting
+        #add a beep once enough coasting has been done?
+            # preferably speed based because we depend on having an accurate
+            # interval to fit a polynomial to
 
 #NOTES:
     #The Transmission shift line in the Tuning page is _NOT_ equal to revbar 
@@ -170,9 +170,8 @@ class GTBeep():
     def init_gui_buttonframe(self):
         frame = tkinter.Frame(self.root)
         
-        variables = ['hysteresis_percent', 'revlimit_percent', 
-                     'revlimit_offset', 'dynamictoneoffset', 'includereplay']
-        adjustables = {name:getattr(self, name) for name in variables}
+        adjustables = { name:getattr(self, name) 
+                                      for name in GUIConfigButton.get_names() }
         self.buttonconfig = GUIConfigButton(frame, config, adjustables)
         self.buttonreset = tkinter.Button(frame, text='Reset', borderwidth=3, 
                                           command=self.reset)
