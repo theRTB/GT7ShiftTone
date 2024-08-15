@@ -179,8 +179,8 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
         accelrun.rolling_avg(box_pts=accelrun_smooth)
     if smoothing == 'multi_rolling':
         accelrun.multi_rolling_avg(box_pts_array=accelrun_smooth)
-    elif smoothing == 'lowpass':
-        accelrun.low_pass_filter(bandlimit=accelrun_smooth)
+    # elif smoothing == 'lowpass':
+    #     accelrun.low_pass_filter(bandlimit=accelrun_smooth)
         
     dragP = Polynomial.fit(dragrun.v[dragrun_bounds[0]:], 
                            dragrun.a[dragrun_bounds[0]:], deg=[1,2], 
@@ -191,7 +191,7 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
     rpm_shape = sorted(accelrun.rpm) if sort_rpm else accelrun.rpm
     
     if interval:
-        rpmmax = max(rpm_shape)
+        rpmmax = accelrun.revlimit
         rpm, torque = simplify_curve(rpm_shape, torque_shape, rpmmax, interval)
     
     power = torque * rpm
@@ -308,7 +308,6 @@ class PowerCurve():
             setattr(self, name, np.array(array))
             if name not in self.columns:
                 print(f'LOAD: Unexpected column {name} found, loaded anyway')
-
 
 
 #convert a packet rate of 60hz to integer milliseconds
