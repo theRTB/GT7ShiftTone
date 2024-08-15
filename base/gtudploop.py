@@ -38,6 +38,14 @@ class GTUDPLoop():
         self.target_ip = target_ip
         self.loop_func = loop_func
 
+    #TODO expand this to automatically derive IP address if not given
+    def derive_ip_address(self):
+        hostname = socket.gethostname()
+        ipaddr = ([i[4][0] for i in socket.getaddrinfo(hostname, None)])
+        #filter on '192.168.', select that one
+        #then use ipaddress range (default 24) to sweep the entire range
+        #when we get data back, read the ip address
+        
     def init_socket(self):
         if self.socket is None:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
