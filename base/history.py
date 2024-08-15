@@ -30,7 +30,7 @@ class History():
         beep_distance_ms = 'N/A'
         if beep_distance is not None:
             beep_distance_ms = packets_to_ms(beep_distance)
-        print(f"gear {gear-1}-{gear}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
+        print(f"gear {gear}-{gear+1}: {shiftrpm:.0f} actual shiftrpm, {target:.0f} target, {difference} difference, {beep_distance_ms} ms distance to beep")
         print("-"*50)
     
     def update(self, target, shiftrpm, gear, beep_distance):
