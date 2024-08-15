@@ -22,6 +22,8 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
 
 from utility import round_to
 
+from base.enginecurve import EngineCurve
+
 # given a curve (class with rpm and power numpy arrays at minimum):
 # draw a power graph with respected revlimit based revlimit_percent and
 # underfill based on power equal or higher than power_percentile
@@ -250,13 +252,14 @@ class PowerWindow():
 #class responsible for handling a tkinter button in the gui to display the
 #power graph when it has been collected. The button is disabled until the user
 #has collected a curve.
-class GUIButtonGraph():
+class GUIEngineCurve(EngineCurve):
     TITLE = "GTShiftTone: Power graph"
     #target width and height of the graph not the window
     WIDTH, HEIGHT= 813, 500
     FIGURE_DPI = 72
 
     def __init__(self, root, handler, config):
+        # super().__init__(config)
         self.root = root
 
         self.button = tkinter.Button(root, text='View\nPower\nGraph', 
