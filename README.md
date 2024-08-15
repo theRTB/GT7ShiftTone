@@ -29,13 +29,15 @@ Revised first public version. This program is not yet user friendly.
 - ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
-- Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file).
+- Improved algorithm to derive points on the power curve, especially the final point.
+- Displayed shift points are now rounded to the nearest 25. The method used in this program probably isn't even accurate enough for that.
+- Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file). Default save folder: curves\.
 
 ## Implementation
 
 The approach is to get consecutive points of acceleration values across a large range of RPMs up to revlimit. These acceleration values include the acceleration from engine torque minus various resistive forces.  
-We derive drag by letting the car coast with the clutch engaged and measure how much the car slows based on speed. We add this back to the acceleration curve to cancel out the drag and this gives us the basic torque curve.  
-We effectively ignore other sources of losses such as rolling resistance as drag is dominant at higher speeds: The resulting curve is close enough.
+We derive an effective sum of resistive forces by letting the car coast with the clutch engaged and measure how much the car slows based on GPS speed. We add this back to the acceleration curve to cancel out the drag and this gives us the basic torque curve.  
+We use the resulting power curve to derive shift points.
 
 The Tone Offset is dynamic. The program keeps track of the time between a shift tone and an initiated shift, and modifies the running Tone Offset if the tone is early or late.
 
@@ -48,13 +50,13 @@ There are three triggers for the shift tone:
 The delay between beep triggers is currently set to 0.5 seconds. This time-out is shared between the three triggers.  
 If you choose to not shift and remain above the trigger RPM, the program will not beep again even if revlimit is hit.
 
-
 ### General display values:
 
 - **Revlimit**: The limit on engine RPM by its own power. Revlimit is derived upon finishing a full throttle sweep up to revlimit.
 - **Revbar**: The range in which the revbar lights up. It begins at 85% and starts blinking at 99% of a predetermined value, generally equal to the upshift line in the Transmission tuning page but not always
 - **Power**: A guesstimate on which RPM peak power is hit. If it matches the in-game value, the power curve is probably quite accurate.
 - **Tach**: The current RPM value as reported by the telemetry. Updates 30 times per second.
+- **Car ID**: The internal ID of the car. The RPM/Power/Torque table is saved with this ID as filename, for example a car with Car ID 432 will have its data saved to _curves\432.tsv_.
 
 ### Per gear:
 
@@ -91,7 +93,6 @@ There is one packet per 16.667 milliseconds, approximately.
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation.
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
-- Application will on rare occasions crash: related to the UI library and cannot be fixed
 - ~~Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque. Cannot be fixed.~~
 - Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 100 RPM or more.
 - The data is smoothed and will not 100% match the ingame curve which is linear interpolation between points
@@ -99,5 +100,6 @@ There is one packet per 16.667 milliseconds, approximately.
 - Revlimit is marginally above the ingame revlimit in by far most runs. We cannot assume it is a multiple of 100 for non-stock cars so rounding down is out.
 - ~~Revlimit is an approximation and is equal to the last highest RPM seen on the full throttle run minus the points smoothed out.~~
 - On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on most consecutive launches
+- Application will on rare occasions crash: related to the UI library and cannot be fixed
 - Linux support is untested
-- This program 'works for me'. If you wish to run this script and there are issues, please report them.
+- This program _'works for me'_. If you wish to run this script and there are issues, please report them.
