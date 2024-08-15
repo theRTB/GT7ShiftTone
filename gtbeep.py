@@ -33,6 +33,7 @@ from base.rpm import RPM
 from base.history import History
 from base.carordinal import CarOrdinal
 from base.gear import Gears, MAXGEARS
+from base.enginecurve import EngineCurve
 from base.configvar import (HysteresisPercent, DynamicToneOffsetToggle, Volume,
                             RevlimitPercent, RevlimitOffset, ToneOffset, 
                             IncludeReplay)
@@ -46,9 +47,9 @@ from gui.carordinal import GUICarOrdinal
 from gui.gear import GUIGears
 from gui.configvar import (GUIPeakPower, GUIToneOffset, GUIRevbarData,
                            GUIRevlimit, GUIVolume, GUIConfigButton)
-from gui.buttongraph import GUIButtonGraph
+from gui.enginecurve import GUIEngineCurve
 
-from utility import beep, multi_beep, Variable, PowerCurve
+from utility import beep, multi_beep, Variable
 
 #TODO:
     #drag fit now outputs a curve with 100 point intervals (changable)
@@ -142,7 +143,7 @@ class GTBeep():
         self.debug_target_rpm = -1
         self.revlimit = Variable(defaultvalue=-1)
         
-        self.curve = None
+        self.curve = EngineCurve(config)
 
         self.shiftdelay_deque = deque(maxlen=120)
 
@@ -197,7 +198,7 @@ class GTBeep():
         self.revbardata = GUIRevbarData(root)
         self.car_ordinal = GUICarOrdinal(root)
         
-        self.buttongraph = GUIButtonGraph(root, self.buttongraph_handler, 
+        self.buttongraph = GUIEngineCurve(root, self.buttongraph_handler, 
                                           config)
         
         self.init_gui_buttonframe()
@@ -245,11 +246,11 @@ class GTBeep():
         self.lookahead.reset()
         self.datacollector.reset()
         self.revlimit.reset()
+        self.curve.reset()
         
         self.we_beeped = 0
         self.beep_counter = 0
         self.debug_target_rpm = -1
-        self.curve = None
 
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter() #should this be reset_to_current_value?
@@ -260,37 +261,30 @@ class GTBeep():
         self.peakpower.reset()
         self.revbardata.reset()
         self.buttongraph.reset()
-
-    def set_curve(self, curve):
-        self.curve = curve
-        self.revlimit.set(curve.get_revlimit())        
-        self.peakpower.set(*curve.get_peakpower_tuple())        
+    
+    #called when car ordinal changes or data collector finishes a run
+    def handle_curve_change(self, gtdp, *args, **kwargs):
+        print("handle_curve_change")
+        self.curve.update(gtdp, *args, **kwargs)
+        
+        print("updating gears")
+        self.gears.update(gtdp)
+        
+        if not self.curve.is_loaded():
+            return
+        
+        print("setting GUI stuff because curve is loaded")
+        self.revlimit.set(self.curve.get_revlimit())        
+        self.peakpower.set(*self.curve.get_peakpower_tuple())        
         self.buttongraph.enable()        
-        self.gears.calculate_shiftrpms(curve.rpm, curve.power)
+        self.gears.calculate_shiftrpms(*self.curve.get_rpmpower())
         
         if config.notification_power_enabled:
             multi_beep(config.notification_file,
                        config.notification_file_duration,
                        config.notification_power_count,
                        config.notification_power_delay)
-            
-    #if there exists a saved curve:
-    # - load curve
-    # - update gear ratios (we need gtdp for this)
-    # - determine shift rpms
-    def handle_curve_load(self, gtdp):
-        filename = f'curves/{self.car_ordinal.get()}.tsv'
-        if not exists(filename):
-            return
-        
-        curve = PowerCurve(filename=filename)
-        
-        print('File exists, setting gear ratios')
-        self.loop_update_gear(gtdp)
-        
-        print('File exists, loading curve')
-        self.set_curve(curve)
-        
+
     #reset if the car_ordinal changes
     #if a car has more than 8 gears, the packet won't contain the ordinal as
     #the 9th gear will overflow into the car ordinal location
@@ -306,7 +300,7 @@ class GTBeep():
             print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
             print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
             
-            self.handle_curve_load(gtdp)
+            self.handle_curve_change(gtdp)
 
     def loop_update_revbar(self, gtdp):
         self.revbardata.update(gtdp.upshift_rpm)
@@ -326,17 +320,9 @@ class GTBeep():
     def loop_linreg(self, gtdp):
         self.lookahead.add(self.rpm.get()) #update linear regresion
 
-    def save_curve(self):
-        filename = f'curves/{self.car_ordinal.get()}.tsv'
-        
-        if self.curve.save(filename):
-            print('Curve saved to file')
-        else:
-            print('Failed to save curve!')
-
-    #grab curve if we collected a complete run
+    #set curve with drag data if we collected a complete run
     def loop_datacollector(self, gtdp):
-        if self.curve is not None:
+        if self.curve.is_loaded():
             return
         
         self.datacollector.update(gtdp)
@@ -344,12 +330,12 @@ class GTBeep():
         if not self.datacollector.is_run_completed():
             return
 
-        #state: self.curve is None and datacollector run is completed
-        self.set_curve(self.datacollector.get_curve())
-        self.save_curve()
+        #state: No curve loaded and datacollector run is completed
+        print("shipping data to EngineCurve")
+        self.handle_curve_change(gtdp, **self.datacollector.get_data())
 
-    def loop_update_gear(self, gtdp):
-        self.gears.update(gtdp)
+    # def loop_update_gear(self, gtdp):
+    #     self.gears.update(gtdp)
 
     #Function to derive the rpm the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
@@ -440,7 +426,7 @@ class GTBeep():
              'loop_guess_revlimit',   #guess revlimit if not defined yet
              'loop_linreg',           #update lookahead with hysteresis rpm
              'loop_datacollector',    #add data point for curve collecting
-             'loop_update_gear',      #update gear ratio and state of gear
+             # 'loop_update_gear',      #update gear ratio and state of gear
            #  'loop_calculate_shiftrpms',#derive shift rpm if possible
              'loop_test_for_shiftrpm',#test if we have shifted
              'loop_beep',             #test if we need to beep
@@ -463,7 +449,7 @@ class GTBeep():
     # of packets (assumed at 60hz) and the above factor for debug printing
     def torque_ratio_test(self, target_rpm, offset, gtdp):
         torque_ratio = 1
-        if self.curve is not None:
+        if self.curve.is_loaded():
             gtdp_torque = self.curve.torque_at_rpm(gtdp.current_engine_rpm)
             if gtdp_torque == 0:
                 return
