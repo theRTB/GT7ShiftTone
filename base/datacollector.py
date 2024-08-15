@@ -52,7 +52,7 @@ class VTACurve(Curve):
         if overflow > 0:
             print("WARNING: OVERFLOW NOT WORKING ATM")
 
-        self.revlimit = max(self.current_engine_rpm) #TODO: add rounding?
+        self.revlimit = int(max(self.current_engine_rpm))
 
         #initialize rpm v t and a variables without smoothing
         self.rolling_avg(box_pts)
@@ -291,6 +291,10 @@ class DataCollector():
 
         self.accelrun = None
         self.dragrun = None
+
+    def get_data(self):
+        return {'accelrun':self.accelrun,
+                'dragrun': self.dragrun}
 
     def get_curve(self):
         return PowerCurve(self.accelrun, self.dragrun)
