@@ -259,13 +259,18 @@ class GUIEngineCurve(EngineCurve):
     FIGURE_DPI = 72
 
     def __init__(self, root, handler, config):
-        # super().__init__(config)
+        super().__init__(config)
         self.root = root
 
         self.button = tkinter.Button(root, text='View\nPower\nGraph', 
                                      borderwidth=3,
                                      command=handler, state=tkinter.DISABLED)
         self.powerwindow = PowerWindow(root, config)
+
+    def update(self, gtdp, *args, **kwargs):
+        super().update(gtdp, *args, **kwargs)
+        if self.is_loaded():
+            self.enable()
 
     def reset(self):
         self.disable()
@@ -286,7 +291,7 @@ class GUIEngineCurve(EngineCurve):
         self.button.grid(*args, **kwargs)
 
     #is called by graphbutton_handler in gui if there is a curve
-    def create_window(self, curve, revlimit_percent, carname):
-        if curve is None:
-            return
-        self.powerwindow.open(curve, revlimit_percent, carname)
+    #The window needs a curve with RPM, power, torque, revlimit% and carname
+    #awkward call because this object is now the curve itself
+    def create_window(self, revlimit_percent, carname):
+        self.powerwindow.open(self, revlimit_percent, carname)

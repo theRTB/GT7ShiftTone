@@ -28,8 +28,11 @@ class EngineCurve():
     DELIMITER = '\t'
     ENCODING = 'ISO-8859-1' #why not UTF-8?
     
+    #code duplication, but calling reset in __init__ causes issues with
+    #inheritance
     def __init__(self, config, *args, **kwargs):
-        self.reset()
+        for var in ['curve_state', 'rpm', 'power', 'torque', 'revlimit']:
+            setattr(self, var, None)
 
     def reset(self):
         for var in ['curve_state', 'rpm', 'power', 'torque', 'revlimit']:

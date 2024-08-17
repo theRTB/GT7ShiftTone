@@ -60,7 +60,6 @@ from utility import beep, multi_beep, Variable
     #  using the Lookahead slope_factor which is currently used for torque only
     #  This will depend on slip ratio because engine rpm and velocity are not
     #  strictly linear
-    #Turn PowerCurve object into GUICurve
     #Grey out gear 9 and 10: non-functional for GT7
     #Save gearing
     #Write script to download csv files for database
@@ -198,7 +197,7 @@ class GTBeep():
         self.revbardata = GUIRevbarData(root)
         self.car_ordinal = GUICarOrdinal(root)
         
-        self.buttongraph = GUIEngineCurve(root, self.buttongraph_handler, 
+        self.curve = GUIEngineCurve(root, self.buttongraph_handler, 
                                           config)
         
         self.init_gui_buttonframe()
@@ -224,7 +223,7 @@ class GTBeep():
         
         self.peakpower.grid(   row=row+1, column=0)           
         self.buttonframe.grid( row=row+1, column=4,             columnspan=4)        
-        self.buttongraph.grid( row=row+1, column=12, rowspan=3)
+        self.curve.grid(       row=row+1, column=12, rowspan=3)
         
         self.init_gui_grid_buttonframe()
         
@@ -234,9 +233,8 @@ class GTBeep():
         
 
     def buttongraph_handler(self, event=None):
-        self.buttongraph.create_window(self.curve, 
-                                       self.revlimit_percent.get(),
-                                       self.car_ordinal.get_name())
+        self.curve.create_window(self.revlimit_percent.get(),
+                                 self.car_ordinal.get_name())
 
     def reset(self, *args):
         self.rpm.reset()
@@ -260,23 +258,21 @@ class GTBeep():
     def gui_reset(self, *args):
         self.peakpower.reset()
         self.revbardata.reset()
-        self.buttongraph.reset()
     
     #called when car ordinal changes or data collector finishes a run
     def handle_curve_change(self, gtdp, *args, **kwargs):
-        print("handle_curve_change")
+        print("Handle_curve_change")
         self.curve.update(gtdp, *args, **kwargs)
         
-        print("updating gears")
+        print("Updating gears")
         self.gears.update(gtdp)
         
         if not self.curve.is_loaded():
             return
         
-        print("setting GUI stuff because curve is loaded")
+        print("Setting GUI data because curve is loaded")
         self.revlimit.set(self.curve.get_revlimit())        
-        self.peakpower.set(*self.curve.get_peakpower_tuple())        
-        self.buttongraph.enable()        
+        self.peakpower.set(*self.curve.get_peakpower_tuple())
         self.gears.calculate_shiftrpms(*self.curve.get_rpmpower())
         
         if config.notification_power_enabled:
