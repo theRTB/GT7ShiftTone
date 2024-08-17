@@ -273,6 +273,7 @@ class GUIEngineCurve(EngineCurve):
             self.enable()
 
     def reset(self):
+        super().reset()
         self.disable()
 
     #enable the button in the GUI
