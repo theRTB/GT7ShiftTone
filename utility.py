@@ -21,6 +21,8 @@ class Variable(object):
     def reset(self):
         self.value = self.defaultvalue
 
+
+
 #modified from stackoverflow code, limited how far the algorithm looks ahead
 #a single run of a power/rpm curve tends to have oscillations, where the power
 #increases above the expected level for the rpm value but then drops and
@@ -77,6 +79,7 @@ def multi_beep(filename=config.sound_file, duration=0.1, count=2, delay=0.1):
     for number in range(count):
         t = Timer(number*(duration+delay), lambda: beep(filename))
         t.start()
+
 
 
 #Only necessary for Forza series
@@ -137,13 +140,14 @@ def calculate_shiftrpm(rpm, power, relratio):
 
 import numpy as np
 from numpy.polynomial import Polynomial
-# from curve import Curve
 
 #From: https://stackoverflow.com/questions/20618804/how-to-smooth-a-curve-for-a-dataset
 #renamed to rolling_avg instead of smooth
 #Apply a rolling average of box_pts points
-#this will cause the first and last box_pts//2 points to be inaccurate
-#if mode 'same' is used
+#this will cause the first and last box_pts//2 points to be inaccurate if mode 
+#'same' is used. Defaults to 'valid', which truncates approximately half the
+#size of box_pts from either side of y. We add the right side back later
+#through linear extrapolation
 def rolling_avg(y, box_pts, mode='valid'):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode=mode)
@@ -211,9 +215,7 @@ from os.path import exists
 #At stock, revlimit is a multiple of 100, but upgrades can be things like 3%
 #more revs and make it a random number. 
 #Appending a single value to an np.array is not efficient
-#Assumes the last section to be accurate for appending the final point
-# If this is increasing instead of (normally) decreasing, final point will be
-# further off than it should be
+#Consider only working off torque and deriving power later.
 class PowerCurve():
     COLUMNS = ['rpm', 'power', 'torque']
     DELIMITER = '\t'
@@ -239,6 +241,8 @@ class PowerCurve():
         
         self.correct_final_point()
 
+    #naively extrapolates power when it is a consequence of torque*rpm
+    #The result is close enough though
     def correct_final_point(self):
         x1, x2 = self.rpm[-2:]
         # print(f'x1 {x1:.3f} x2 {x2:.3f} revlimit {self.revlimit}')
