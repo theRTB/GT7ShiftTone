@@ -92,6 +92,9 @@ There is one packet per 16.667 milliseconds, approximately.
 ## Notes and known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation.
+- FWD cars can't be measured using controller: Handbrake does not disengage the clutch.
+- The Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve.
+  - Output adjustment will maintain the overall shape, so is fine to adjust.
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
 - ~~Power values in the graph are percentage-based: GT7 only provides acceleration not power/torque. Cannot be fixed.~~
 - Due to noise in the acceleration data it is not always possible to derive at which RPM peak power occurs. It can be off by 100 RPM or more.
