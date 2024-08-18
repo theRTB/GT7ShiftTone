@@ -9,6 +9,9 @@ import csv
 import numpy as np
 from os.path import exists
 
+from os import makedirs
+makedirs('curves/', exist_ok=True) #create curves folder if not exists
+
 from utility import np_drag_fit
 
 #poorly named: does not extend Curve
@@ -27,6 +30,8 @@ class EngineCurve():
     COLUMNS = ['rpm', 'power', 'torque']
     DELIMITER = '\t'
     ENCODING = 'ISO-8859-1' #why not UTF-8?
+    FOLDER = 'curves'
+    FILENAME = lambda _, gtdp: f'{EngineCurve.FOLDER}/{gtdp.car_ordinal}.tsv'
     
     #code duplication, but calling reset in __init__ causes issues with
     #inheritance
@@ -46,7 +51,7 @@ class EngineCurve():
         if self.curve_state:
             return #this should not happen though
         
-        filename = f'curves/{gtdp.car_ordinal}.tsv'
+        filename = self.FILENAME(gtdp)
         if exists(filename): #file exists
             self.load(filename)
             self.curve_state = True
