@@ -38,6 +38,10 @@ class GTUDPLoop():
         self.target_ip = target_ip
         self.loop_func = loop_func
 
+    def firststart(self):
+        if self.target_ip != '':
+            self.toggle(True)
+
     #TODO expand this to automatically derive IP address if not given
     def derive_ip_address(self):
         hostname = socket.gethostname()
