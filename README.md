@@ -1,7 +1,6 @@
 # GT7ShiftTone
-It beeps, you shift.
 
-**Windows GUI application to provide a shift tone for Gran Turismo 7.**
+**Calibrated audio tone that indicates when to shift for optimal acceleration in **
 
 ![example Subaru WRX STI 2014](images/GUIandPower-4.png)
 
