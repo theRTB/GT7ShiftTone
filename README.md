@@ -1,6 +1,6 @@
 # GT7ShiftTone
 
-**Calibrated audio tone that indicates when to shift for optimal acceleration in **
+**Calibrated audio tone that indicates when to shift for optimal acceleration in Gran Turismo 7**
 
 ![example Subaru WRX STI 2014](images/GUIandPower-4.png)
 
