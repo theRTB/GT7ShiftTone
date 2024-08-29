@@ -27,32 +27,22 @@ from base.datacollector import DataCollector
 from utility import beep, multi_beep, Variable
 
 #TODO:
+    #Save gearing
     #drag fit now outputs a curve with 100 point intervals (changable)
     # this is through nearest point interpolation, without any using regression
     # this could be improved, but has a rolling average built in
-    #Copy button: open Textbox with various stats pasted for copy and paste
+
     #Create an acceleration curve per gear for a more accurate prediction
     #  using the Lookahead slope_factor which is currently used for torque only
     #  This will depend on slip ratio because engine rpm and velocity are not
     #  strictly linear
-    #Grey out gear 9 and 10: non-functional for GT7
-    #Save gearing
     #Write script to download csv files for database
-    #Maybe phase out Settings window to extend main window to the right?
-    #Grid variables into those
-    #Brief shift history of the last 5 shifts or so in main window?
     #Automatically determine PS IP through socket or brute force?
     #Investigate y axis on Special Route X: is it really flat?
-    # hide 0.00 rel ratio on final gear: add finalgear option somehow
-    # rework row display on shift history: it visibles rotates due to slowness
-    # move to labels instead
     
-    #Expand on 
-    
-    # Test if window scalar config variable works as expected
-    # Test if changing dpi works as expected
     # Test the duration of coasting required for accurate values
         #The [1,2] exponent gives an arbitrarily good fit with coasting
+        #Tests indicate a midrange speed works better than just high speed
         #add a beep once enough coasting has been done?
             # preferably speed based because we depend on having an accurate
             # interval to fit a polynomial to

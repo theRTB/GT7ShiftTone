@@ -35,6 +35,20 @@ from gui.enginecurve import GUIEngineCurve
 
 from utility import Variable
 
+#TODO:
+    # hide 0.00 rel ratio on final gear: add finalgear option somehow
+    # rework row display on shift history: it visibles rotates due to slowness
+    # move to labels instead
+    #Grey out gear 9 and 10: non-functional for GT7
+    #Maybe phase out Settings window to extend main window to the right?
+    #Grid variables into those
+    #Brief shift history of the last 5 shifts or so in main window?
+    
+    #Copy button: open Textbox with various stats pasted for copy and paste
+    
+    # Test if window scalar config variable works as expected
+    # Test if changing dpi works as expected
+    
 #tkinter GUI wrapper around GTBeep
 class GUIGTBeep(GTBeep):
     TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
