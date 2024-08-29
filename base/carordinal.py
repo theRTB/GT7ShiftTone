@@ -16,7 +16,7 @@ def load_csv(filename, index, as_integer=[]):
     data = {}
     if not exists(filename):
         print(f'file {filename} does not exist')
-        return None
+        return {}
     
     with open(filename, encoding='ISO-8859-1') as rawcsv:
         csvobject = csv.DictReader(rawcsv, delimiter=',')
