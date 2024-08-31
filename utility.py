@@ -314,6 +314,7 @@ class PowerCurve():
                 print(f'LOAD: Unexpected column {name} found, loaded anyway')
 
 
+
 #convert a packet rate of 60hz to integer milliseconds
 def packets_to_ms(val):
     return int(1000*val/60)

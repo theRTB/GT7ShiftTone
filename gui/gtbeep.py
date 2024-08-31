@@ -44,6 +44,8 @@ from utility import Variable
     #Grid variables into those
     #Brief shift history of the last 5 shifts or so in main window?
     
+    #Add Bluetooth keepalive with (near) silent audio file
+    
     #Copy button: open Textbox with various stats pasted for copy and paste
     
     # Test if window scalar config variable works as expected
