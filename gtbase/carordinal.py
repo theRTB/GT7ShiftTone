@@ -47,9 +47,14 @@ class CarData():
         maker_id = car['Maker']
         maker = cls.makerdata.get(maker_id, {}).get('Name', 'UNKNOWN')
         return f'{maker} {name} (o{car_ordinal})'
-        
+
+#Not inheriting forzabase.carordinal because it attempts to load the forza
+#CarData which cannot be found for obvious reasons
 class CarOrdinal(Variable):
     def test(self, value):
         if self.get() != value:
             return True
         return False
+    
+    def get_name(self):
+        return CarData.get_name(self.get())

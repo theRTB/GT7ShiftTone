@@ -9,7 +9,7 @@ import socket
 from threading import Timer
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from base.gtdatapacket import GTDataPacket
+from gtbase.gtdatapacket import GTDataPacket
 
 #TODO:
 # - use ipaddress library for target_ip
@@ -28,14 +28,14 @@ class GTUDPLoop():
     HEARTBEAT_TIMER = 10 # in seconds
     HEARTBEAT_CONTENT = b'A'
     
-    def __init__(self, target_ip, loop_func=None):
+    def __init__(self, config, loop_func=None):
         self.threadPool = ThreadPoolExecutor(max_workers=8,
                                              thread_name_prefix="exec")
         self.isRunning = False
         self.socket = None
         self.t = None
 
-        self.target_ip = target_ip
+        self.target_ip = config.target_ip
         self.loop_func = loop_func
 
     def firststart(self):

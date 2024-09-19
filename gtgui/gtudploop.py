@@ -6,7 +6,9 @@ Created on Mon Feb 19 20:46:18 2024
 """
 from mttkinter import mtTkinter as tkinter
 
-from base.gtudploop import GTUDPLoop
+from forzagui.forzaudploop import (GUIButtonStartStop, GenericGUIUDPLoop,
+                                   GUIStatus)
+from gtbase.gtudploop import GTUDPLoop
 
 #TODO: update this class to use ipaddress library
 class GUITargetIP():
@@ -43,40 +45,15 @@ class GUITargetIP():
     def reset(self):
         self.tkvar.set(self.defaultguivalue)
 
-class GUIButtonStartStop():
-    def __init__(self, root, command):
-        self.tkvar = tkinter.StringVar(value='Start')
-        self.button = tkinter.Button(root, borderwidth=3, 
-                                         textvariable=self.tkvar, 
-                                         command=command)
-
-    def toggle(self, toggle):
-        self.tkvar.set('Start' if toggle else 'Stop')
-
-    def grid(self, row, column, *args, **kwargs):
-        self.button.grid(row=row, column=column, *args, **kwargs)
-    
-    def pack(self, *args, **kwargs):
-        self.button.pack(*args, **kwargs)
-    
-    def invoke(self):
-        self.button.invoke()
+class GUIButtonStartStop(GUIButtonStartStop):
+    pass
         
-class GUIStatus():
-    def __init__(self, root, value):
-        self.tkvar = tkinter.StringVar(value=value)            
-        self.label = tkinter.Label(root, textvariable=self.tkvar, 
-                                   relief=tkinter.GROOVE, width=12)    
-
-    def grid(self, row, column, *args, **kwargs):
-        self.label.grid(row=row, column=column, *args, **kwargs)
-    
-    def set(self, value):
-        self.tkvar.set(value)
+class GUIStatus(GUIStatus):
+    pass
         
-class GUIGTUDPLoop(GTUDPLoop):
+class GUIGTUDPLoop(GenericGUIUDPLoop, GTUDPLoop):
     def __init__(self, root, config, loop_func=None):
-        super().__init__(config.target_ip, loop_func=loop_func)
+        super().__init__(root, config, loop_func=loop_func)
         self.state = 'Stopped'
         
         self.init_tkinter(root, config)        
@@ -92,13 +69,6 @@ class GUIGTUDPLoop(GTUDPLoop):
         self.gui_ip.grid(         row=0, column=0)
         self.buttonstartstop.grid(row=1, column=0)
         self.status.grid(         row=1, column=1, columnspan=2)
-    
-    def grid(self, row, column, *args, **kwargs):
-        self.frame.grid(row=row, column=column, *args, **kwargs)
-
-    #convenience function
-    def firststart(self):
-        self.startstop_handler() #implied start, not explicit start
 
     def startstop_handler(self, event=None):
         if self.gui_ip.get() != '':
@@ -106,22 +76,7 @@ class GUIGTUDPLoop(GTUDPLoop):
             self.gui_ip.toggle(self.is_running()) #toggle read-only
             self.set_target_ip(self.gui_ip.get()) #set loop IP before start
             self.toggle(True)
-    
-    def update_status(self, value):
-        self.state = value
-        self.status.set(self.state)
-    
-    #same logic as in GTUDPLoop toggle. We seem to be running into a race 
-    #condition where self.isRunning is not updated yet to test for status
-    #update after calling the base function in GTUDPLoop
-    def toggle(self, toggle=None):
-        if toggle and not self.isRunning:
-            self.update_status('Started')
-        else:
-            self.update_status('Stopped')
-    
-        super().toggle(toggle)
-        
+            
     def send_heartbeat(self):
         if self.state in ['Started', 'Timeout']:
             self.update_status('Waiting')

@@ -14,16 +14,10 @@ from mttkinter import mtTkinter as tkinter
 #import tkinter
 import tkinter.ttk
 
-#tell Windows we are DPI aware
-import ctypes
-PROCESS_SYSTEM_DPI_AWARE = 1
-PROCESS_PER_MONITOR_DPI_AWARE = 2
-ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
-
-from base.history import History
+from forzabase.history import History
 
 #Setting maxlen>10 requires a manual window height adjustment
-class GUIHistory (History):
+class GenericGUIHistory():
     TITLE = "GTShiftTone: Shift history"
     COLUMNNAMES = ['Target', 'Shift RPM', 'Gear', 'Time']
     def __init__(self, root, config, maxlen=10):
@@ -132,3 +126,7 @@ class GUIHistory (History):
     def close(self):
         self.window.destroy()
         self.window = None
+        
+class GUIHistory(GenericGUIHistory, History):
+    def __init__(self, root, config, maxlen=10):
+        super().__init__(root, config, maxlen)

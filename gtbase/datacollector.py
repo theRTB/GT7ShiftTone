@@ -6,10 +6,10 @@ Created on Mon Mar 18 21:26:19 2024
 """
 import numpy as np
 
-from utility import rolling_avg, PowerCurve
+from utility import rolling_avg
 
-#can be initialized from a Curve or an array of GTDataPacket
-#TODO: rename to something like GTDPNPArray?
+#can be initialized from a Curve or an array of ForzaDataPacket
+#TODO: rename to something like ForzaDPNPArray?
 class Curve ():
     def __init__(self, packets):
         if type(packets) == list:
@@ -295,6 +295,3 @@ class DataCollector():
     def get_data(self):
         return {'accelrun':self.accelrun,
                 'dragrun': self.dragrun}
-
-    def get_curve(self):
-        return PowerCurve(self.accelrun, self.dragrun)

@@ -67,6 +67,8 @@ class GTDataPacket():
         self.gears = [None] + [round(g, 3) for g in gears]
         
         self.car_ordinal = struct.unpack('i', ddata[0x124:0x124 + 4])[0]
+        
+        self.accel = self.throttle #alias
     
     def print(self):
         print(self.ddata)

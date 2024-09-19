@@ -6,11 +6,11 @@ Created on Sun Jul 21 13:53:13 2024
 """
 from mttkinter import mtTkinter as tkinter
 
-from base.carordinal import CarData, CarOrdinal
+from forzabase.carordinal import CarOrdinal
 
-class GUICarOrdinal(CarOrdinal):
-    def __init__(self, root, defaultguivalue=''):
-        super().__init__()
+class GenericGUICarOrdinal():
+    def __init__(self, root, defaultguivalue='', *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.defaultguivalue = defaultguivalue
         
         self.tkvar = tkinter.StringVar(value=defaultguivalue)
@@ -29,9 +29,6 @@ class GUICarOrdinal(CarOrdinal):
     def gui_get(self):
         return self.tkvar.get()
 
-    def get_name(self):
-        return CarData.get_name(self.get())
-
     def set(self, value):
         super().set(value)
         gui_value = value #CarData.get_name(value)
@@ -39,4 +36,9 @@ class GUICarOrdinal(CarOrdinal):
         
     def reset(self):
         super().reset()
-        self.tkvar.set(self.defaultguivalue)
+        self.tkvar.set(self.defaultguivalue) 
+
+class GUICarOrdinal(GenericGUICarOrdinal, CarOrdinal):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        

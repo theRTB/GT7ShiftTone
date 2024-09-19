@@ -12,10 +12,10 @@ from mttkinter import mtTkinter as tkinter
 #import tkinter
 # import tkinter.ttk
 
-from base.rpm import RPM
+from forzabase.rpm import RPM
 
 #Consider a defaultguivalue variable
-class GUIRPM(RPM):
+class GenericGUIRPM(RPM):
     def __init__(self, root, hysteresis_percent):
         super().__init__(hysteresis_percent=hysteresis_percent)
         
@@ -46,3 +46,7 @@ class GUIRPM(RPM):
         if self.update_tach:
             self.gui_set(round(gtdp.current_engine_rpm))
         self.update_tach = not self.update_tach
+        
+class GUIRPM(GenericGUIRPM, RPM):
+    def __init__(self, root, hysteresis_percent):
+        super().__init__(root, hysteresis_percent)
