@@ -19,9 +19,9 @@ from forzabase.carordinal import CarOrdinal
 from forzabase.gear import Gears, MAXGEARS
 from forzabase.enginecurve import EngineCurve
 # from forzabase.shiftdump import ShiftDump
-from forzabase.configvar import (HysteresisPercent, DynamicToneOffsetToggle, Volume,
-                            RevlimitPercent, RevlimitOffset, ToneOffset, 
-                            IncludeReplay)
+from forzabase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
+                                 RevlimitPercent, RevlimitOffset, ToneOffset, 
+                                 IncludeReplay, Volume)
 from forzabase.lookahead import Lookahead
 from forzabase.datacollector import DataCollector
 
@@ -57,8 +57,6 @@ class ShiftBeep():
         self.init_vars()     
         self.loop.firststart() #trigger start of loop
 
-    #variables are defined again in init_gui_vars, purpose is to split baseline
-    #and gui eventually
     def init_vars(self):
         self.loop = ForzaUDPLoop(config, loop_func=self.loop_func)
         self.gears = Gears(config)
@@ -107,6 +105,12 @@ class ShiftBeep():
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter() #should this be reset_to_current_value?
     
+    def print_car_changed(self, fdp):
+        print(f'New ordinal {self.car_ordinal.get()}, PI {fdp.car_performance_index}, resetting!')
+        print(f'New car: {self.car_ordinal.get_name()}')
+        print(f'Hysteresis: {self.hysteresis_percent.as_rpm(fdp):.1f} rpm')
+        print(f'Engine: {fdp.engine_idle_rpm:.0f} min rpm, {fdp.engine_max_rpm:.0f} max rpm')
+
     #called when car ordinal changes or data collector finishes a run
     def handle_curve_change(self, fdp, *args, **kwargs):
         print("Handle_curve_change")
@@ -125,15 +129,8 @@ class ShiftBeep():
                        config.notification_power_count,
                        config.notification_power_delay)
 
-    def print_car_changed(self, fdp):
-        print(f'New ordinal {self.car_ordinal.get()}, PI {fdp.car_performance_index}, resetting!')
-        print(f'New car: {self.car_ordinal.get_name()}')
-        print(f'Hysteresis: {self.hysteresis_percent.as_rpm(fdp):.1f} rpm')
-        print(f'Engine: {fdp.engine_idle_rpm:.0f} min rpm, {fdp.engine_max_rpm:.0f} max rpm')
-        
     #reset if the car_ordinal changes
-    #if a car has more than 8 gears, the packet won't contain the ordinal as
-    #the 9th gear will overflow into the car ordinal location
+    #try to load power curve if it exists as file
     def loop_test_car_changed(self, fdp):
         ordinal = fdp.car_ordinal
         if ordinal <= 0 or ordinal > 1e5:
@@ -184,7 +181,6 @@ class ShiftBeep():
                        config.notification_gear_count,
                        config.notification_gear_delay)
 
-    #update call with get_rpmpower
     def loop_calculate_shiftrpms(self, _):
         if self.curve.is_loaded():
             self.gears.calculate_shiftrpms(*self.curve.get_rpmpower())
