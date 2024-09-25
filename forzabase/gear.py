@@ -128,6 +128,9 @@ class Gear():
         self.state.to_next()
 
     #return True if we should play gear beep
+    #Derive a gear ratio by comparing the engine RPM with the wheel rotation
+    #speed which has some variance. If the variance is below the lower bound
+    #then we can lock the gear ratio for this gear
     def update(self, fdp):
         if self.state.at_initial():
             self.to_next_state()
@@ -172,11 +175,16 @@ class Gears():
     #it could be used as reverse gear but not in a usable manner anyway
     def __init__(self, config):
         self.gears = [None] + [Gear(g, config) for g in self.GEARLIST]
+        self.highest = 1
 
     def reset(self):
-       for g in self.gears[1:]:
-           g.reset()
+        for g in self.gears[1:]:
+            g.reset()
+        self.highest = 1
 
+    #in the case the user generates a 'better' power curve we can recalculate
+    #the shiftrpm values by dropping the gear state down which forces a
+    #recalculation
     def newrun_decrease_state(self):
         for g in self.gears[1:]:
             g.newrun_decrease_state() #force recalculation of rpm
@@ -190,9 +198,8 @@ class Gears():
             return self.gears[int(gear)].get_shiftrpm()
         return -1
 
-    #TODO: implement highest gear seen
-    def is_highest(self, gear):
-        return False
+    def is_highest(self, gearnr):
+        return self.highest == gearnr
 
     #Gear 1 - 10 are valid. Gear 0 is reverse. Gear 11 is neutral.
     def is_valid(self, fdp):
@@ -205,4 +212,5 @@ class Gears():
         gear = int(fdp.gear)
         if gear == 0 or gear > MAXGEARS:
             return
+        self.highest = max(self.highest, gear)
         return self.gears[gear].update(fdp)
