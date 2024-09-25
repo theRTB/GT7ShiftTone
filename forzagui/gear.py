@@ -38,8 +38,8 @@ class GenericGUIGear():
     def __init__(self, number, root, config):
         super().__init__(number, config)
         self.var_bound = None
-        self.round = lambda rpm: (math.ceil(rpm / config.shiftrpm_round) 
-                                                * config.shiftrpm_round)
+        self.revlimit = math.inf
+        self.shiftrpm_round = config.shiftrpm_round
         self.shiftrpm_var = tkinter.IntVar()
         self.ratio_var = tkinter.DoubleVar()
         self.relratio_var = tkinter.StringVar()
@@ -77,12 +77,19 @@ class GenericGUIGear():
     def reset(self):
         super().reset()
         self.var_bound = None
+        self.revlimit = math.inf
         self.update_entry_colors()
         self.variance_entry.grid()
 
+    def round(self, val):
+        if val >= self.revlimit:
+            return int(val / self.shiftrpm_round) * self.shiftrpm_round
+        return math.ceil(val / self.shiftrpm_round) * self.shiftrpm_round
+
     def set_shiftrpm(self, val):
         super().set_shiftrpm(val)
-        self.shiftrpm_var.set(self.round(val))
+        newval = self.round(val)
+        self.shiftrpm_var.set(newval)
 
     def set_ratio(self, val):
         super().set_ratio(val)
@@ -98,6 +105,11 @@ class GenericGUIGear():
         factor = math.log(val, base)
         factor = min(max(factor, 0), 1)
         self.variance_var.set(f'{factor:.0%}')
+
+    def set_revlimit(self, val):
+        if val == -1: #bit of an ugly hack, revlimit defaults to -1 in shiftbeep
+            val = math.inf
+        self.revlimit = val
 
     def update_entry_colors(self):
         shiftrpm_colors, ratio_colors = self.ENTRY_COLORS[self.state]
@@ -116,6 +128,11 @@ class GenericGUIGear():
         if self.var_bound is None:
             self.var_bound = self.VAR_BOUNDS[fdp.drivetrain_type]
         return super().update(fdp, *args, **kwargs)
+
+    #assumes that the max of rpm is equal to revlimit
+    def calculate_shiftrpm(self, rpm, power, nextgear):
+        self.set_revlimit(max(rpm))
+        super().calculate_shiftrpm(rpm, power, nextgear)
 
     def toggle_ratio_display(self):
         if self.ratio_entry.winfo_viewable():
