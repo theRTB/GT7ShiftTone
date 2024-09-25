@@ -43,6 +43,7 @@ class GUIGear(GenericGUIGear, Gear):
         self.update_entry_colors()
         self.variance_entry.grid_remove() #force remove variance afterwards
 
+    #override base to_next_state to skip grid_remove()
     def to_next_state(self):
         super().to_next_state()
         self.update_entry_colors()
