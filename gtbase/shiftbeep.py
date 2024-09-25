@@ -18,13 +18,13 @@ from gtbase.history import History
 from gtbase.carordinal import CarOrdinal
 from gtbase.gear import Gears, MAXGEARS
 from gtbase.enginecurve import EngineCurve
-from gtbase.configvar import (HysteresisPercent, DynamicToneOffsetToggle, Volume,
-                            RevlimitPercent, RevlimitOffset, ToneOffset, 
-                            IncludeReplay)
+from gtbase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
+                              RevlimitPercent, RevlimitOffset, ToneOffset, 
+                              IncludeReplay, Volume)
 from gtbase.lookahead import Lookahead
 from gtbase.datacollector import DataCollector
 
-from utility import beep, multi_beep, Variable
+from utility import Variable
 
 #TODO:
     #Save gearing
@@ -129,29 +129,8 @@ class ShiftBeep(ShiftBeep):
         print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
         print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
 
-    #reset if the car_ordinal changes
-    #if a car has more than 8 gears, the packet won't contain the ordinal as
-    #the 9th gear will overflow into the cr ordinal location
-    def loop_test_car_changed(self, gtdp):
-        super().loop_test_car_changed(gtdp)
-
     def loop_update_revbar(self, gtdp):
         self.revbardata.update(gtdp.upshift_rpm)
-        
-    #update internal rpm taking the hysteresis value into account:
-    #only update if the difference between previous and current rpm is large
-    def loop_update_rpm(self, gtdp):
-        super().loop_update_rpm(gtdp)
-
-    def loop_linreg(self, gtdp):
-        super().loop_linreg(gtdp)
-
-    #set curve with drag data if we collected a complete run
-    def loop_datacollector(self, gtdp):
-        super().loop_datacollector(gtdp)
-
-    # def loop_update_gear(self, gtdp):
-    #     self.gears.update(gtdp)
 
     #Function to derive the rpm the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
@@ -200,55 +179,10 @@ class ShiftBeep(ShiftBeep):
         self.shiftdelay_deque.clear()
         self.tone_offset.reset_counter()
 
-    #play beep depending on volume. If volume is zero, skip beep
-    def do_beep(self):
-        super().do_beep()
-
-    def loop_beep(self, gtdp):
-        super().loop_beep(gtdp)
-
-    def debug_log_full_shiftdata(self, gtdp):
-        super().debug_log_full_shiftdata(gtdp)
-
     def loop_test_skip(self, gtdp):
         return not(self.includereplay.test(gtdp) and 
                (1 <= int(gtdp.gear) <= MAXGEARS) and
                not gtdp.loading and not gtdp.paused)
-        
-    #this function is called by the loop whenever a new packet arrives
-    def loop_func(self, gtdp):
-        super().loop_func(gtdp)
-
-    #TODO: Move the torque ratio function to PowerCurve
-    #to account for torque not being flat, we take a linear approach
-    #we take the ratio of the current torque and the torque at the shift rpm
-    # if < 1: the overall acceleration will be lower than a naive guess
-    #         therefore, scale the slope down: trigger will happen later
-    # if > 1: the car will accelerate more. This generally cannot happen unless
-    # there is partial throttle.
-    # Returns a boolean if target_rpm is predicted to be hit in 'offset' number
-    # of packets (assumed at 60hz) and the above factor for debug printing
-    def torque_ratio_test(self, target_rpm, offset, gtdp):
-        return super().torque_ratio_test(target_rpm, offset, gtdp)
-
-    #make sure the target_rpm is the lowest rpm trigger of all triggered beeps
-    #used for debug logging
-    def update_target_rpm(self, val):
-        super().update_target_rpm(val)
-
-    #test for the three beep triggers:
-        #if shiftrpm of gear will be hit in x time (from_gear)
-        #if revlimit will be hit in x+y time
-        #if percentage of revlimit will be hit in x time
-    def test_for_beep(self, shiftrpm, gtdp):
-        return super().test_for_beep(shiftrpm, gtdp)
-
-    #write all settings that can change to the config file
-    def config_writeback(self, varlist=['tone_offset']):        
-        super().config_writeback(varlist)
-
-    def close(self):
-        super().close()
 
 def main():
     global gtbeep #for debugging
