@@ -55,7 +55,14 @@ class Gears(Gears):
     def reset(self):
         super().reset()
         self.highest = None
-
+        
+    #Gear 1 - 8 are valid. Reverse is unknown, neutral is unknown.
+    #Gear 9 - 10 gear ratios are not in the regular packets so will only update
+    #the RPM display
+    def is_valid(self, fdp):
+        gear = int(fdp.gear)
+        return 0 < gear <= 10
+    
     def is_highest(self, gearnr):
         return self.highest == gearnr
 
