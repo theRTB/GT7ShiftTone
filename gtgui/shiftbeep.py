@@ -57,6 +57,20 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
     WRITEBACK_VARS = GenericGUIShiftBeep.WRITEBACK_VARS + ['target_ip']
     
+    LOOP_FUNCS = [
+         'loop_test_car_changed', #reset if car ordinal/PI changes
+         'loop_update_revbar',    #set revbar min/max rpm
+         'loop_update_rpm',       #update tach and hysteresis rpm
+          # 'loop_guess_revlimit',   #guess revlimit if not defined yet
+         'loop_linreg',           #update lookahead with hysteresis rpm
+         'loop_datacollector',    #add data point for curve collecting
+          # 'loop_update_gear',      #update gear ratio and state of gear
+          # 'loop_calculate_shiftrpms',#derive shift rpm if possible
+         'loop_test_for_shiftrpm',#test if we have shifted
+         'loop_beep',             #test if we need to beep
+         'debug_log_full_shiftdata'             
+                ]
+
     def __init__(self):
         super().__init__()
 
@@ -97,6 +111,9 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
         
         row = GUIGears.ROW_COUNT #start from row below gear display
         self.revbardata.grid(  row=row,   column=3)
+
+    def loop_update_revbar(self, gtdp):
+        self.revbardata.update(gtdp.upshift_rpm)
 
     def reset(self):
         super().reset()

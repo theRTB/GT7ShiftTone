@@ -68,13 +68,12 @@ from utility import Variable
 class ShiftBeep(ShiftBeep):
     LOOP_FUNCS = [
          'loop_test_car_changed', #reset if car ordinal/PI changes
-         'loop_update_revbar',    #set revbar min/max rpm
          'loop_update_rpm',       #update tach and hysteresis rpm
-         # 'loop_guess_revlimit',   #guess revlimit if not defined yet
+          # 'loop_guess_revlimit',   #guess revlimit if not defined yet
          'loop_linreg',           #update lookahead with hysteresis rpm
          'loop_datacollector',    #add data point for curve collecting
-         # 'loop_update_gear',      #update gear ratio and state of gear
-       #  'loop_calculate_shiftrpms',#derive shift rpm if possible
+          # 'loop_update_gear',      #update gear ratio and state of gear
+          # 'loop_calculate_shiftrpms',#derive shift rpm if possible
          'loop_test_for_shiftrpm',#test if we have shifted
          'loop_beep',             #test if we need to beep
          'debug_log_full_shiftdata'             
@@ -116,12 +115,6 @@ class ShiftBeep(ShiftBeep):
     def reset(self, *args):
         super().reset()
     
-    #called when car ordinal changes or data collector finishes a run
-    def handle_curve_change(self, gtdp, *args, **kwargs):
-        print("Updating gears")
-        self.gears.update(gtdp)
-        super().handle_curve_change(gtdp, *args, **kwargs)
-
     #called when the car id has changed from loop_test_car_changed
     def print_car_changed(self, gtdp):
         print(f'New ordinal {self.car_ordinal.get()}, resetting!')
@@ -129,8 +122,11 @@ class ShiftBeep(ShiftBeep):
         print(f'Hysteresis: {self.hysteresis_percent.as_rpm(gtdp):.1f} rpm')
         print(f'Engine: {gtdp.engine_max_rpm:.0f} max rpm')
 
-    def loop_update_revbar(self, gtdp):
-        self.revbardata.update(gtdp.upshift_rpm)
+    #called when car ordinal changes or data collector finishes a run
+    def handle_curve_change(self, gtdp, *args, **kwargs):
+        print("Updating gears")
+        self.gears.update(gtdp)
+        super().handle_curve_change(gtdp, *args, **kwargs)
 
     #Function to derive the rpm the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
