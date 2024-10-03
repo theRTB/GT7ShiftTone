@@ -34,6 +34,9 @@ class GUITargetIP():
         state = tkinter.NORMAL if toggle else 'readonly'
         self.entry.config(state=state)
 
+    def set(self, val):
+        self.tkvar.set(val)
+
     def get(self):
         return self.tkvar.get()
 
@@ -63,7 +66,7 @@ class GUIGTUDPLoop(GenericGUIUDPLoop, GTUDPLoop):
         
         self.buttonstartstop = GUIButtonStartStop(self.frame, 
                                                   self.startstop_handler)
-        self.gui_ip = GUITargetIP(self.frame, config.target_ip)
+        self.gui_ip = GUITargetIP(self.frame, self.get_target_ip())
         self.status = GUIStatus(self.frame, self.state)
         
         self.gui_ip.grid(         row=0, column=0)
@@ -71,12 +74,15 @@ class GUIGTUDPLoop(GenericGUIUDPLoop, GTUDPLoop):
         self.status.grid(         row=1, column=1, columnspan=2)
 
     def startstop_handler(self, event=None):
-        if self.gui_ip.get() != '':
-            self.buttonstartstop.toggle(self.is_running()) #toggle text
-            self.gui_ip.toggle(self.is_running()) #toggle read-only
-            self.set_target_ip(self.gui_ip.get()) #set loop IP before start
-            self.toggle(True)
-            
+        self.buttonstartstop.toggle(self.is_running()) #toggle text
+        self.gui_ip.toggle(self.is_running()) #toggle read-only
+        self.set_target_ip(self.gui_ip.get()) #set loop IP before start
+        self.toggle(True)
+
+    def set_target_ip(self, val):
+        super().set_target_ip(val)
+        self.gui_ip.set(val)
+
     def send_heartbeat(self):
         if self.state in ['Started', 'Timeout']:
             self.update_status('Waiting')

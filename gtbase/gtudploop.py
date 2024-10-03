@@ -13,7 +13,6 @@ from gtbase.gtdatapacket import GTDataPacket
 
 #TODO:
 # - use ipaddress library for target_ip
-# - consider a second socket to send packets, to set two different timeouts
 # - replace 1024 in recvfrom with correct packet size, if there are multiple
 #   packets in queue, this may mess things up. So far so good.
 
@@ -22,11 +21,22 @@ from gtbase.gtdatapacket import GTDataPacket
 #Default socket timeout is 1 seconds, this seems to delay exiting any program
 #Sends a heartbeat every 10 seconds
 
+#Implemented UDP broadcast instead of asking the user for the PS IP-address
+#There appear to be two choices on Windows:
+    #1. subnet broadcast with the socket bound to ''
+    #2. global broadcast with the socket bound to the local IP address
+#The problem is that both options require information on either the local
+#IP-address or the subnet it is on. This is platform dependent on how easy it
+#is to derive. On Linux, binding to '' and broadcasting to the global broadcast
+#address (255.255.255.255) supposedly does work.
+
 class GTUDPLoop():
     RECV_PORT = 33740
     HEARTBEAT_PORT = 33739
     HEARTBEAT_TIMER = 10 # in seconds
+    HEARTBEAT_TIMER_FAST = 1 # in seconds
     HEARTBEAT_CONTENT = b'A'
+    BROADCAST_ADDRESS = '255.255.255.255'
     
     def __init__(self, config, loop_func=None):
         self.threadPool = ThreadPoolExecutor(max_workers=8,
@@ -34,30 +44,51 @@ class GTUDPLoop():
         self.isRunning = False
         self.socket = None
         self.t = None
+        self.timer = self.HEARTBEAT_TIMER
 
         self.target_ip = config.target_ip
         self.loop_func = loop_func
 
-    def firststart(self):
-        if self.target_ip != '':
-            self.toggle(True)
-
-    #TODO expand this to automatically derive IP address if not given
-    def derive_ip_address(self):
-        hostname = socket.gethostname()
-        ipaddr = ([i[4][0] for i in socket.getaddrinfo(hostname, None)])
-        #filter on '192.168.', select that one
-        #then use ipaddress range (default 24) to sweep the entire range
-        #when we get data back, read the ip address
-        
     def init_socket(self):
-        if self.socket is None:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.settimeout(1)
-            sock.bind(('', self.RECV_PORT))
+        local_ip = self.derive_local_address()
+        print(f'Derived local IP: {local_ip if local_ip else "UNKNOWN"}')
+        
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(1)
+        sock.bind((local_ip, self.RECV_PORT))
         return sock
+        
+    #Crude implementation of finding a local valid IP address
+    #where it's simpler to assume it's in the most common range: 
+    #192.168.0.0/16 with a subnet of /24
+    @classmethod
+    def derive_local_address(cls, match_ip='192.168'):
+        #Method 1:
+        ip = socket.gethostbyname(socket.gethostname())
+        if ip[:len(match_ip)] == match_ip:
+            return ip
+        
+        #Method 2:
+        ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)]
+        for ip in ips:
+            if ip[:len(match_ip)] == match_ip:
+                return ip
+        
+        #No match
+        return ''
     
+    def loop_get_ps_ip(self):
+        print("Entering loop to derive PS IP-address")
+        while self.isRunning:
+            try:
+                _, address = self.socket.recvfrom(1024)
+                self.set_target_ip(address[0])
+                return
+            except BaseException as e:
+                print(f"Waiting for PS response: {e}")
+
     #Toggles the packet loop with a logical 'xor' on boolean toggle
     #If toggle is false: loop will be stopped if it is running
     #if toggle is true: loop will be started if it is not running
@@ -66,12 +97,25 @@ class GTUDPLoop():
             def starting():
                 print("Starting loop")
                 self.isRunning = True
-                #This was an attempt to close the socket after the loop ends
-                #Not sure it is succesful.
+                
+                #Do global broadcast with fast timer
+                if (broadcast_method :=
+                        (self.target_ip in ['', self.BROADCAST_ADDRESS])):
+                    print("No PS IP given: Using broadcast method")
+                    self.set_target_ip(self.BROADCAST_ADDRESS)
+                    self.timer = self.HEARTBEAT_TIMER_FAST
+                
                 with self.init_socket() as self.socket:
                     self.maintain_heartbeat()
+                    
+                    #loop until we receive a packet on RECV_PORT
+                    #then reset timer back to default
+                    if broadcast_method: 
+                        self.loop_get_ps_ip()  #loops here
+                        print(f"Derived PS IP: {self.target_ip}")
+                        self.timer = self.HEARTBEAT_TIMER  
+                        
                     self.gtdp_loop(self.loop_func)
-                self.socket = None #This runs after the loop stops!
             self.threadPool.submit(starting)
         else:
             def stopping():
@@ -100,7 +144,7 @@ class GTUDPLoop():
         address = (self.target_ip, self.HEARTBEAT_PORT)
         if self.socket is not None:
             self.socket.sendto(self.HEARTBEAT_CONTENT, address)
-            print("Heartbeat sent")
+            print(f"Heartbeat sent to {address}")
         else:
             print("Socket was closed for heartbeat")
 
@@ -108,10 +152,22 @@ class GTUDPLoop():
         try:
             if self.isRunning:
                 self.send_heartbeat()
-                self.t = Timer(self.HEARTBEAT_TIMER, self.maintain_heartbeat)
+                self.t = Timer(self.timer, self.maintain_heartbeat)
                 self.t.start()
         except BaseException as e:
-            print(e)
+            print(f'maintain_heartbeat: {e}')
+
+    def nextGTdp(self):
+        try:
+            rawdata, _ = self.socket.recvfrom(1024)
+            return GTDataPacket(rawdata)
+        except BaseException as e:
+            print(f"BaseException {e}")
+            return None
+
+    #Externally called functions
+    def firststart(self):
+        self.toggle(True)
 
     def get_target_ip(self):
         return self.target_ip
@@ -128,12 +184,5 @@ class GTUDPLoop():
         if self.t is not None:
             self.t.cancel() #abort any running timer
         print("Ended timer function for heartbeat")
-        self.threadPool.shutdown(wait=False)
+        self.threadPool.shutdown(wait=True)
         
-    def nextGTdp(self):
-        try:
-            rawdata, _ = self.socket.recvfrom(1024)
-            return GTDataPacket(rawdata)
-        except BaseException as e:
-            print(f"BaseException {e}")
-            return None
