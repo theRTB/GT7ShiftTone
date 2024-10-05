@@ -4,19 +4,14 @@
 
 ![example Subaru WRX STI 2014](images/GUIandPower-4.png)
 
-## On first launch
-You will need to find and manually set your console IP address into the UI:
-- Find the IP address by going to the PS Settings -> Network -> Connection Status -> View Connection Status -> IPv4 address
-- Enter this IPv4 address into the PS IP entry box then hit Start
-  - After this, GT7ShiftTone will automatically connect to this address and autostart
-
-## Steps
+## Steps for a new car
+- Confirm the application is receiving data: Under Connection it says 'Receiving' (instead of 'Timeout')
 - Load into Special Route X Time Trial, drive past the first tunnel (with the finish line)
 - Straighten the car, apply full throttle in a gear that goes from low/medium RPM to revlimit in a few seconds
-- When revlimit is hit twice, briefly press handbrake to disengage the clutch
+- When revlimit is hit a few times, briefly press handbrake to disengage the clutch
 - Let the car roll for several seconds to 10 seconds (finish before the uphill section)
   - Avoid steering inputs as much as possible, controller is preferable
-- Press throttle to finish. You can now go to other races with a shift beep.
+- Press throttle to finish. You can now go to other races with a shift beep. The power curve is also saved for use from this point onwards.
 - Be aware that false positives exist: not every beep is an upshift.
 
 ## Current release
@@ -87,6 +82,16 @@ In Settings:
 The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset and Console IP. The gear ratios are not saved.  
 Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
 There is one packet per 16.667 milliseconds, approximately.
+
+## Playstation IP-address
+The program will attempt to find an active Playstation console with Gran Turismo 7 active. It does this by assuming both the Playstation and the device the code runs on are on the same local network (the most common range of 192.168.x.y).  
+If that fails, do the following:  
+You will need to find and manually set your console IP address into the UI:
+
+- Find the IP address by going to the PS Settings -> Network -> Connection Status -> View Connection Status -> IPv4 address
+- Press Stop to stop the background loop
+- Enter this IPv4 address into the PS IP entry box then hit Start
+  - After this, GT7ShiftTone will automatically connect to this address and autostart
 
 ## Notes and known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
