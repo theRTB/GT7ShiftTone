@@ -23,6 +23,7 @@ Revised first public version. This program is not yet user friendly.
 - ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
+- Program now attempts to find the Playstation on the network automatically.
 - Improved algorithm to derive points on the power curve, especially the final point.
 - Displayed shift points are now rounded to the nearest 25. The method used in this program probably isn't even accurate enough for that.
 - Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file). Default save folder: curves\.
