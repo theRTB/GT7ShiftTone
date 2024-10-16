@@ -98,8 +98,6 @@ class GenericGUIShiftBeep():
         adjustables = { name:getattr(self, name) 
                                       for name in GUIConfigButton.get_names() }
         self.buttonconfig = GUIConfigButton(frame, config, adjustables)
-        self.buttonreset = tkinter.Button(frame, text='Reset', borderwidth=3, 
-                                          command=self.reset)
         self.history = GUIHistory(frame, config=config)
         
         self.buttonframe = frame
@@ -121,12 +119,15 @@ class GenericGUIShiftBeep():
         self.curve = GUIEngineCurve(root, self.buttongraph_handler, 
                                           config)
         
+        self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3,
+                                          font = tkinter.font.Font(size = 8),
+                                          command=self.reset)
         self.init_gui_buttonframe()
 
     def init_gui_grid_buttonframe(self):
         self.buttonconfig.grid(row=0, column=0)
-        self.buttonreset.grid( row=0, column=1)
-        self.history.grid(     row=0, column=2)
+        # self.buttonreset.grid( row=0, column=1)
+        self.history.grid(     row=0, column=1)
 
     def init_gui_grid(self):
         self.gears.init_grid()
@@ -150,6 +151,7 @@ class GenericGUIShiftBeep():
         self.rpm.grid(         row=row+3, column=0)
         self.tone_offset.grid( row=row+3, column=3)
         self.car_ordinal.grid( row=row+3, column=7)
+        self.buttonreset.grid( row=row+3, column=9)
 
     def reset(self):
         super().reset()
