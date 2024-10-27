@@ -125,14 +125,15 @@ import intersect
 #point on the x-axis where intersection occurs, the second is the y-axis
 #we are only interested in the x-axis and we assume the last intersection is
 #the most accurate one.
-def calculate_shiftrpm(rpm, power, relratio):
+def calculate_shiftrpm(rpm, power, relratio, do_print=True):
     intersects = intersect.intersection(rpm, power, rpm*relratio, power)[0]
     shiftrpm = round(intersects[-1],0) if len(intersects) > 0 else rpm[-1]
-    print(f"shift rpm {shiftrpm:.0f}, drop to {shiftrpm/relratio:.0f}, "
-          f"drop is {shiftrpm*(1.0 - 1.0/relratio):.0f}")
-
-    if len(intersects) > 1:
-        print("Warning: multiple intersects found: graph may be noisy")
+    
+    if do_print:
+        print(f"shift rpm {shiftrpm:.0f}, drop to {shiftrpm/relratio:.0f}, "
+              f"drop is {shiftrpm*(1.0 - 1.0/relratio):.0f}")
+        if len(intersects) > 1:
+            print("Warning: multiple intersects found: graph may be noisy")
 
     return shiftrpm
 
