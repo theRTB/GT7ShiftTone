@@ -13,10 +13,6 @@ from forzagui.configvar import (GUIRevlimitOffset, GUIRevlimitPercent,
                                  GUIToneOffset, GUIRevlimit, GUIPeakPower, 
                                  GUIVolume, GUIConfigWindow, GUIConfigButton)
 
-
-# from utility import (packets_to_ms, ms_to_packets, round_to,
-#                      factor_to_percent, percent_to_factor, Variable)
-
 #The in-game revbar scales off the revbar variable in telemetry:
 #Starts at 85% and starts blinking at 99%
 class GUIRevbarData():
