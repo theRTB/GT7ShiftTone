@@ -58,5 +58,5 @@ class GUIGear(GenericGUIGear, Gear):
 class GUIGears(GenericGUIGears, Gears):
     def __init__(self, root, config):
         self.gears = [None] + [GUIGear(g, root, config) for g in self.GEARLIST]
-        
+        self.highest = None
         self.init_window(root)
