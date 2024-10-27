@@ -24,11 +24,13 @@ Revised first public version. This program is not yet user friendly.
 - ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
 
 Changes:  
+- Added ability to import a curve from [WebPlotDigitizer 4.7](https://github.com/automeris-io/WebPlotDigitizer/releases/tag/v4.7)
+  - Steps to import are shown in the window that opens when you click **Import Graph**
+  - The imported graph may not be saved to file, to be confirmed
 - Program now attempts to find the Playstation on the network automatically.
 - Improved algorithm to derive points on the power curve, especially the final point.
 - Displayed shift points are now rounded to the nearest 25. The method used in this program probably isn't even accurate enough for that.
 - Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file). Default save folder: curves\.
-- Added ability to import a curve from [WebPlotDigitizer 4.7](https://github.com/automeris-io/WebPlotDigitizer/releases/tag/v4.7)
 
 ## Implementation
 
@@ -71,7 +73,8 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then t
 - **Reset button**: If pressed, reset revlimit, power curve and all values for all gears. Configuration values are unchanged. If the UI is unresponsive, restart the application.
 - **Start/Stop button**: Stops or starts the loop to collect packets. In short, if button says "Stop" it is running, if it says "Start" the program is not tracking the game's packets and will not beep.
 - **Shift history**: Displays a table with the last 10 shifts including target RPM, actual shift RPM, gear and measured offset between beep and shift.
-- **View graphs button**: If enabled and pressed, displays a power graph in a separate window. 
+- **View graphs button**: If enabled and pressed, displays a power graph in a separate window.
+- **Import Graph**: If pressed, open window with steps to import a power curve into the program
 
 In Settings:  
 - **Hysteresis**: Hysteresis may be set as another layer to smooth RPM. An intermediary RPM value is updated only if the change in RPM is larger than the hysteresis value, which is then used for the shift beep tests. Defaults to 0.5% of maximum engine RPM.
@@ -95,6 +98,9 @@ You will need to find and manually set your console IP address into the UI:
 - Press Stop to stop the background loop
 - Enter this IPv4 address into the PS IP entry box then hit Start
   - After this, GT7ShiftTone will automatically connect to this address and autostart
+
+## Import Graph
+The import works on screenshots of the power curve displaying in the Car settings in-game. Remote Play can also be used.
 
 ## Notes and known issues
 - Assumptions: not grip limited, shift duration of 0 and no penalty to power after shifting (aka, a turbo)
