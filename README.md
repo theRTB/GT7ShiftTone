@@ -20,8 +20,7 @@ Revised first public version. This program is not yet user friendly.
 
 ### Launch with:
 - gtbeep.py: For Python users  
-- ~~**GT7ShiftTone.vbs**: to launch the application (Preferred, requires ZIP download)~~  
-- ~~**GT7ShiftTone-debug.bat**: to launch the application with an additional commandline window that shows debug information (requires ZIP download)~~
+- GT7ShiftTone 0.51.exe: if you have downloaded the PyInstaller release
 
 Changes:  
 - Added ability to import a curve from [WebPlotDigitizer 4.7](https://github.com/automeris-io/WebPlotDigitizer/releases/tag/v4.7)
