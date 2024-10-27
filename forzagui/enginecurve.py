@@ -278,7 +278,7 @@ class GenericGUIEngineCurve():
 
     def update(self, gtdp, *args, **kwargs):
         super().update(gtdp, *args, **kwargs)
-        if self.is_loaded():
+        if self.is_loaded(): #NOTE: this is from EngineCurve
             self.enable()
 
     def reset(self):
