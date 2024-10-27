@@ -2,7 +2,8 @@
 
 **Calibrated audio tone that indicates when to shift for optimal acceleration in Gran Turismo 7**
 
-![example Subaru WRX STI 2014](images/GUIandPower-4.png)
+![example Subaru WRX STI 2014 GUI](images/GUI.png)
+![example Subaru WRX STI 2014 Power](images/Power.png)
 
 ## Steps for a new car
 - Confirm the application is receiving data: Under Connection it says 'Receiving' (instead of 'Timeout')
@@ -27,6 +28,7 @@ Changes:
 - Improved algorithm to derive points on the power curve, especially the final point.
 - Displayed shift points are now rounded to the nearest 25. The method used in this program probably isn't even accurate enough for that.
 - Power curves are now saved based on the Car ID. They can be modified/created through Excel as well (tab separated file). Default save folder: curves\.
+- Added ability to import a curve from [WebPlotDigitizer 4.7](https://github.com/automeris-io/WebPlotDigitizer/releases/tag/v4.7)
 
 ## Implementation
 
