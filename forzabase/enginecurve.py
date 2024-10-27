@@ -54,17 +54,27 @@ class EngineCurve():
         if self.curve_state:
             return #this should not happen though
         
-        filename = self.FILENAME(gtdp)
-        if exists(filename): #file exists
+        filename = self.FILENAME(gtdp) if gtdp is not None else None
+        if len(kwargs) > 0:
+            self.curve_state = True
+            if 'accelrun' in kwargs.keys() and 'dragrun' in kwargs.keys():
+                self.init_from_run(*args, **kwargs)
+            elif 'rpm' in kwargs.keys() and 'power' in kwargs.keys():
+                self.init_from_importgraph(*args, **kwargs)
+            else:
+                self.curve_state = False
+                print("no curve init done, something failed")
+                return
+            
+            if gtdp.car_ordinal:
+                self.save(filename)
+                print(f'Saved curve to {filename}')
+            else:
+                print("Curve not saved: no car ordinal")
+        elif filename and exists(filename): #file exists
             self.load(filename)
             self.curve_state = True
             print(f'Loaded curve from {filename}')
-        elif len(kwargs) > 0:
-            self.curve_state = True
-            # self.init_from_drag_fit(*args, **kwargs)
-            self.init_from_run(*args, **kwargs)
-            self.save(filename)
-            print(f'Saved curve to {filename}')
         else:
             self.curve_state = False
             print("No curve loaded, waiting for DataCollector")
@@ -72,9 +82,13 @@ class EngineCurve():
     # def init_from_file(self, filename, *args, **kwargs):
     #     self.load(filename)
     
+    def init_from_importgraph(self, rpm, power):
+        self.rpm = rpm
+        self.power = power
+        self.revlimit = rpm[-1]
+    
     #TODO: get revlimit from runcollector
     def init_from_run(self, run, *args, **kwargs):
-        
         rpm = np.array([p.current_engine_rpm for p in run])
         power = np.array([p.power for p in run]) / 1000 #W -> kW
         torque = np.array([p.torque for p in run])
