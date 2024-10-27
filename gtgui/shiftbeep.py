@@ -33,8 +33,9 @@ from gtgui.gear import GUIGears
 from gtgui.configvar import (GUIPeakPower, GUIToneOffset, GUIRevbarData,
                            GUIRevlimit, GUIVolume, GUIConfigButton)
 from gtgui.enginecurve import GUIEngineCurve
+from gtgui.importgraph import GUIImportGraph
 
-from utility import Variable
+# from utility import Variable
 
 #TODO:
     # hide 0.00 rel ratio on final gear: add finalgear option somehow
@@ -55,7 +56,7 @@ from utility import Variable
 #tkinter GUI wrapper around GTBeep
 class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
-    WRITEBACK_VARS = GenericGUIShiftBeep.WRITEBACK_VARS + ['target_ip']
+    WRITEBACK_VARS = GenericGUIShiftBeep.WRITEBACK_VARS #+ ['target_ip']
     
     LOOP_FUNCS = [
          'loop_test_car_changed', #reset if car ordinal/PI changes
@@ -80,9 +81,10 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
         adjustables = { name:getattr(self, name) 
                                       for name in GUIConfigButton.get_names() }
         self.buttonconfig = GUIConfigButton(frame, config, adjustables)
-        self.buttonreset = tkinter.Button(frame, text='Reset', borderwidth=3, 
-                                          command=self.reset)
         self.history = GUIHistory(frame, config=config)
+        
+        self.powerimport = GUIImportGraph(frame, self.powerimport_handler, 
+                                          config)
         
         self.buttonframe = frame
         
@@ -104,14 +106,33 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
         self.curve = GUIEngineCurve(root, self.buttongraph_handler, 
                                           config)
         
+        self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
+                                          font= tkinter.font.Font(size= 8),
+                                          command=self.reset)
         self.init_gui_buttonframe()
 
+    def init_gui_grid_buttonframe(self):
+        super().init_gui_grid_buttonframe()
+        self.powerimport.grid(row=0, column=2)
+        
     def init_gui_grid(self):
         super().init_gui_grid()
         
         row = GUIGears.ROW_COUNT #start from row below gear display
         self.revbardata.grid(  row=row,   column=3)
 
+    #called by self.importgraph once user presses the button to import data
+    def powerimport_handler(self, rpm, power, ratios):
+        # gtdp = None
+        class FakePacket():
+            def __init__(self_):
+                self_.car_ordinal = self.car_ordinal.get()
+                self_.gears = ratios
+        gtdp = FakePacket()
+        
+        #dictionary approach because it depends on kwargs to interpret data
+        self.handle_curve_change(gtdp, rpm=rpm, power=power)
+        
     def loop_update_revbar(self, gtdp):
         self.revbardata.update(gtdp.upshift_rpm)
 
@@ -122,7 +143,7 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     #write all GUI configurable settings to the config file
     def config_writeback(self, varlist=WRITEBACK_VARS):        
         #hack to get ip from loop
-        self.target_ip = Variable(self.loop.get_target_ip())
+        #self.target_ip = Variable(self.loop.get_target_ip())
         
         super().config_writeback(varlist)
 
