@@ -20,6 +20,8 @@ GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as the
 - Program attempts to find a running Playstation on the network automatically.
 - Displayed shift points are rounded to the nearest 50. Internally, the program shifts to the precise value.
 
+# Information below this point is not required for using the shift tone
+
 ## Implementation
 
 The Tone Offset is dynamic. The program keeps track of the time between a shift tone and an initiated shift, and modifies the running Tone Offset if the tone is early or late.
@@ -53,14 +55,14 @@ If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then t
 ### General configuration:
 
 - **Tone offset**: Predicted distance between the beep trigger and the trigger RPM value.
-  - This should not be taken as reaction time and minimized. It should be regarded as the time you can consistently respond to the tone with the least amount of mental effort. Defaults to 283 ms.
+  - This should not be taken as reaction time and minimized. It should be regarded as the time you consistently respond to the tone with the least amount of mental effort. Defaults to 283 ms.
 - **Volume**: Adjusts the volume of the beep in four steps total. Each step is about half as loud as the previous, where the second loudest is the default. A value of 0 mutes only the shift beep.
 - **Reset button**: If pressed, reset revlimit, power curve and all values for all gears. Configuration values are unchanged. If the UI is unresponsive, restart the application.
 - **Start/Stop button**: Stops or starts the loop to collect packets. In short, if button says "Stop" it is running, if it says "Start" the program is not tracking the game's packets and will not beep.
 - **Shift history**: Displays a table with the last 10 shifts including target RPM, actual shift RPM, gear and measured offset between beep and shift.
 - **View Power Graph**: If enabled and pressed, displays a power graph in a separate window.
 
-In Settings:  
+In **Settings**:  
 - **Hysteresis**: Hysteresis may be set as another layer to smooth RPM. An intermediary RPM value is updated only if the change in RPM is larger than the hysteresis value, which is then used for the shift beep tests. Defaults to 0.5% of maximum engine RPM.
 - **Revlimit %**: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
 - **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
