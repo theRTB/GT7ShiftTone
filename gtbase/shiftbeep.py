@@ -23,6 +23,7 @@ from gtbase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
                               IncludeReplay, Volume)
 from gtbase.lookahead import Lookahead
 from gtbase.datacollector import DataCollector
+from gtbase.speedstats import SpeedStats
 
 from utility import Variable
 
@@ -75,6 +76,7 @@ class ShiftBeep(ShiftBeep):
           # 'loop_update_gear',      #update gear ratio and state of gear
           # 'loop_calculate_shiftrpms',#derive shift rpm if possible
          'loop_test_for_shiftrpm',#test if we have shifted
+         'loop_update_speedstats', #update speed tests (0-100 for example)
          'loop_beep',             #test if we need to beep
          'debug_log_full_shiftdata'             
             ]
@@ -82,14 +84,15 @@ class ShiftBeep(ShiftBeep):
         self.init_vars()     
         self.loop.firststart() #trigger start of loop given IP address
 
-    #variables are defined again in init_gui_vars, purpose is to split baseline
-    #and gui eventually
+    #override variables from the base ShiftBeep
     def init_vars(self):
         self.loop = GTUDPLoop(config, loop_func=self.loop_func)
         self.gears = Gears(config)
         self.datacollector = DataCollector(config)
         self.lookahead = Lookahead(config)
         self.history = History(config)
+        
+        self.speedstats = SpeedStats(config)
         
         self.car_ordinal = CarOrdinal()
         
@@ -127,7 +130,12 @@ class ShiftBeep(ShiftBeep):
         print("Updating gears")
         self.gears.update(gtdp)
         super().handle_curve_change(gtdp, *args, **kwargs)
+        self.speedstats.set_revlimit(self.revlimit.get())
 
+    def loop_update_speedstats(self, gtdp):
+        if config.speed_stats_active:
+            self.speedstats.update(gtdp)
+    
     #Function to derive the rpm the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
     #not in gear and there is an increase in the gear number, there has been

@@ -34,42 +34,32 @@ from gtgui.configvar import (GUIPeakPower, GUIToneOffset, GUIRevbarData,
                            GUIRevlimit, GUIVolume, GUIConfigButton)
 from gtgui.enginecurve import GUIEngineCurve
 from gtgui.importgraph import GUIImportGraph
+from gtgui.speedstats import GUISpeedStats
+# from gtgui.fuelstats import GUIFuelStats
 
 # from utility import Variable
 
-#TODO:
-    # hide 0.00 rel ratio on final gear: add finalgear option somehow
-    # rework row display on shift history: it visibles rotates due to slowness
-    # move to labels instead
-    #Grey out gear 9 and 10: non-functional for GT7
-    #Maybe phase out Settings window to extend main window to the right?
-    #Grid variables into those
-    #Brief shift history of the last 5 shifts or so in main window?
-    
-    #Add Bluetooth keepalive with (near) silent audio file
-    
-    #Copy button: open Textbox with various stats pasted for copy and paste
-    
-    # Test if window scalar config variable works as expected
-    # Test if changing dpi works as expected
+
     
 #tkinter GUI wrapper around GTBeep
 class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
-    TITLE = "GTShiftTone: Dynamic shift tone for Gran Turismo 7"
+    TITLE = "GT7ShiftTone: Dynamic shift tone for Gran Turismo 7"
     WRITEBACK_VARS = GenericGUIShiftBeep.WRITEBACK_VARS #+ ['target_ip']
     
-    LOOP_FUNCS = [
-         'loop_test_car_changed', #reset if car ordinal/PI changes
+    LOOP_FUNCS = ShiftBeep.LOOP_FUNCS + [
+         # 'loop_test_car_changed', #reset if car ordinal/PI changes
          'loop_update_revbar',    #set revbar min/max rpm
-         'loop_update_rpm',       #update tach and hysteresis rpm
+         # 'loop_update_fuelstats',
+         # 'loop_update_rpm',       #update tach and hysteresis rpm
+          # 'loop_update_speedstats', #update speed tests (0-100 for example)
           # 'loop_guess_revlimit',   #guess revlimit if not defined yet
-         'loop_linreg',           #update lookahead with hysteresis rpm
-         'loop_datacollector',    #add data point for curve collecting
-          # 'loop_update_gear',      #update gear ratio and state of gear
-          # 'loop_calculate_shiftrpms',#derive shift rpm if possible
-         'loop_test_for_shiftrpm',#test if we have shifted
-         'loop_beep',             #test if we need to beep
-         'debug_log_full_shiftdata'             
+         # 'loop_linreg',           #update lookahead with hysteresis rpm
+         # 'loop_datacollector',    #add data point for curve collecting
+         #  # 'loop_update_gear',      #update gear ratio and state of gear
+         #  # 'loop_calculate_shiftrpms',#derive shift rpm if possible
+         # 'loop_test_for_shiftrpm',#test if we have shifted
+         # 'loop_beep',             #test if we need to beep
+         # 'debug_log_full_shiftdata'             
                 ]
 
     def __init__(self):
@@ -83,9 +73,9 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
         self.buttonconfig = GUIConfigButton(frame, config, adjustables)
         self.history = GUIHistory(frame, config=config)
         
-        self.powerimport = GUIImportGraph(frame, self.powerimport_handler, 
-                                          config)
-        
+        self.speedstats = GUISpeedStats(frame, config)
+        # self.fuelstats = GUIFuelStats(frame, config)
+    
         self.buttonframe = frame
         
     def init_gui_vars(self):
@@ -107,34 +97,47 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
                                           config)
         
         self.buttonreset = tkinter.Button(root, text='Reset', borderwidth=3, 
-                                          font= tkinter.font.Font(size= 8),
+                                          font=tkinter.font.Font(size=8),
                                           command=self.reset)
+        self.powerimport = GUIImportGraph(root, self.powerimport_handler, 
+                                          config)
         self.init_gui_buttonframe()
 
     def init_gui_grid_buttonframe(self):
         super().init_gui_grid_buttonframe()
-        self.powerimport.grid(row=0, column=2)
+        
+        if config.speed_stats_active:
+            self.speedstats.grid(row=0, column=2)
+        # self.fuelstats.grid(row=0, column=2)
         
     def init_gui_grid(self):
         super().init_gui_grid()
         
         row = GUIGears.ROW_COUNT #start from row below gear display
         self.revbardata.grid(  row=row,   column=3)
+        
+        if config.import_graph_button:
+            self.powerimport.grid(row=row+3, column=10)
 
     #called by self.importgraph once user presses the button to import data
     def powerimport_handler(self, rpm, power, ratios):
-        # gtdp = None
-        class FakePacket():
-            def __init__(self_):
+        #at this point we don't have a legit packet to send, so the only option
+        #is to fake it with the relevant variables filled in
+        #TODO: consider reworking handle_curve_change to make the gtdp optional
+        class FakePacket(): 
+            def __init__(self_): 
                 self_.car_ordinal = self.car_ordinal.get()
                 self_.gears = ratios
         gtdp = FakePacket()
         
         #dictionary approach because it depends on kwargs to interpret data
         self.handle_curve_change(gtdp, rpm=rpm, power=power)
-        
+    
     def loop_update_revbar(self, gtdp):
         self.revbardata.update(gtdp.upshift_rpm)
+
+    # def loop_update_fuelstats(self, gtdp):
+    #     self.fuelstats.update(gtdp)
 
     def reset(self):
         super().reset()
@@ -143,6 +146,8 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     #write all GUI configurable settings to the config file
     def config_writeback(self, varlist=WRITEBACK_VARS):        
         #hack to get ip from loop
+        #due to automatic IP detection we don't save this any more
+        #otherwise it's a problem if the PS5 changes IP-address
         #self.target_ip = Variable(self.loop.get_target_ip())
         
         super().config_writeback(varlist)

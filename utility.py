@@ -178,7 +178,8 @@ def simplify_curve(x, y, xmax=None, n=100):
 #  anything with this?
 def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None), 
                 accelrun_bounds=(0, None), smoothing='multi_rolling', 
-                accelrun_smooth=[3,21], sort_rpm=True, interval=100):
+                accelrun_smooth=[3,21], sort_rpm=True, interval=100,
+                relative=True):
 
     if smoothing == 'rolling':
         accelrun.rolling_avg(box_pts=accelrun_smooth)
@@ -201,9 +202,11 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
     
     power = torque * rpm
     
-    return (np.array(rpm), 
-            100*torque/max(torque), 
-            100*power/max(power))
+    if relative:
+        torque = 100*torque/max(torque)
+        power = 100*power/max(power)
+    
+    return (np.array(rpm), torque, power)
 
 import csv
 from os.path import exists

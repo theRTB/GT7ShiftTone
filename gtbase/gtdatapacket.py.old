@@ -22,12 +22,9 @@ class GTDataPacket():
                  'low_beams', 'asm_active', 'tcs_active', 
                  'unknown1', 'unknown2', 'unknown3', 'unknown4']
     PROPS = ['position_x', 'position_y', 'position_z', 
-             'upshift_rpm', 'engine_max_rpm', 'est_top_speed', 
-             'gear', 'throttle', 'brake', 
-             'tirerotFL', 'tirerotFR', 'tirerotRL', 'tirerotRR',
-             'tireradiusFL', 'tireradiusFR', 'tireradiusRL', 'tireradiusRR', 
-             'clutch', 'clutch_in', 'clutch_rpm', 'current_engine_rpm', 
-             'speed', 'fuel_level', 'fuel_capacity', 'gears', 'packet_id']
+             'upshift_rpm', 'engine_max_rpm', 'gear', 'throttle', 'brake', 
+             'clutch', 'clutch_in', 'clutch_rpm', 'current_engine_rpm', 'speed', 
+             'gears', 'packet_id']
     def __init__(self, data):
         ddata = GTDataPacket.decrypt(data)
         self.ddata = ddata
@@ -41,22 +38,14 @@ class GTDataPacket():
         self.position_z = struct.unpack('f', ddata[0x0C:0x0C + 4])[0]  # pos Z
         
         self.current_engine_rpm = struct.unpack('f', ddata[0x3C:0x3C + 4])[0]  # rpm        
-       
-        self.fuel_level = struct.unpack('f', ddata[0x44:0x44 + 4])[0]
-        
-        #TODO: car is EV if fuel capacity is == 0?
-        self.fuel_capacity = struct.unpack('f', ddata[0x48:0x48 + 4])[0]
-       
         self.speed = struct.unpack('f', ddata[0x4C:0x4C + 4])[0]
+        
         self.boost = struct.unpack('f', ddata[0x50:0x50+4])[0] #no -1
         
         self.packet_id = struct.unpack('i', ddata[0x70:0x70 + 4])[0]
             
         self.upshift_rpm = struct.unpack('H', ddata[0x88:0x88 + 2])[0]  # rpm rev warning
         self.engine_max_rpm = struct.unpack('H', ddata[0x8A:0x8A + 2])[0]
-        
-        #Note: may be in mph or kph according to comments
-        self.est_top_speed = struct.unpack('h', ddata[0x8C:0x8C+2])[0]
         
         flags = struct.unpack('B', ddata[0x8E:0x8E + 1])[0]
         for i, varname in enumerate(self.FLAGNAMES):
@@ -67,47 +56,28 @@ class GTDataPacket():
         self.throttle = struct.unpack('B', ddata[0x91:0x91 + 1])[0]  # throttle 
         self.brake = struct.unpack('B', ddata[0x92:0x92 + 1])[0] 
         
-        #In radians
-        self.tirerotFL = struct.unpack('f', ddata[0xA4:0xA4+4])[0] 
-        self.tirerotFR = struct.unpack('f', ddata[0xA8:0xA8+4])[0] 
-        self.tirerotRL = struct.unpack('f', ddata[0xAC:0xAC+4])[0] 
-        self.tirerotRR = struct.unpack('f', ddata[0xB0:0xB0+4])[0] 
-        
-        #These are constants
-        self.tireradiusFL = struct.unpack('f', ddata[0xB4:0xB4+4])[0] 
-        self.tireradiusFR = struct.unpack('f', ddata[0xB8:0xB8+4])[0] 
-        self.tireradiusRL = struct.unpack('f', ddata[0xBC:0xBC+4])[0] 
-        self.tireradiusRR = struct.unpack('f', ddata[0xC0:0xC0+4])[0] 
-        
-        #Clutch appears to be binary without a real life shifter
         self.clutch = struct.unpack('f', ddata[0xF4:0xF4 + 4])[0]  # clutch
         self.clutch_in = struct.unpack('f', ddata[0xF8:0xF8 + 4])[0]  # clutch
         self.clutch_rpm = struct.unpack('f', ddata[0xFC:0xFC + 4])[0]  # clutch
                 
-        #potentially drivetrain ratio for best theoretical top speed?
-        #unlisted, may be wrong. Used to be reverse ratio
-        self.top_speed_ratio = struct.unpack('f', ddata[0x100:0x100 + 4])[0]
+        #final gear at 0x100?
         
         #None as gear 0 for a 1:1 mapping for gear number
         gears = list(struct.unpack('8f', ddata[0x104:0x124]))
         self.gears = [None] + [round(g, 3) for g in gears]
         
-        #Is overwritten if car has >8 gears
         self.car_ordinal = struct.unpack('i', ddata[0x124:0x124 + 4])[0]
         
-        #aliases
-        self.accel = self.throttle
-        self.rpm =  self.current_engine_rpm
+        self.accel = self.throttle #alias
     
     def print(self):
         print(self.ddata)
     
-    @classmethod
-    def get_props(cls):
+    def get_props(self):
         # flags = [self.get_flag(name) for name in self.FLAGNAMES]
         # props = [(name, getattr(self, name)) for name in self.PROPS]
         # flagnames = [f'{name}' for name in self.FLAGNAMES]
-        return cls.FLAGNAMES + cls.PROPS
+        return self.FLAGNAMES + self.PROPS
     
     #From https://github.com/snipem/gt7dashboard/blob/main/gt7dashboard/gt7communication.py
     @staticmethod

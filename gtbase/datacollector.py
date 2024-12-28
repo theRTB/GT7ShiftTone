@@ -169,8 +169,9 @@ class GTDragCollector():
 class GTAccelCollector():
     MINLEN = 90
     OVERFLOW = 15 #return x points after peak rpm in curve
+    MIN_THROTTLE = 255
 
-    def __init__(self, keep_overflow=True):
+    def __init__(self, keep_overflow=False):
         self.run = []
         self.state = 'WAIT'
         self.prev_rpm = -1
@@ -182,7 +183,7 @@ class GTAccelCollector():
 
     def update(self, gtdp):
         if self.state == 'WAIT':
-            if (gtdp.throttle == 255 and gtdp.cars_on_track
+            if (gtdp.throttle >= self.MIN_THROTTLE and gtdp.cars_on_track
                     and self.prev_rpm < gtdp.current_engine_rpm):
                 self.state = 'RUN'
                 self.gear_collected = gtdp.gear
@@ -190,7 +191,7 @@ class GTAccelCollector():
 
         if self.state == 'RUN':
             # print(f"RUN {gtdp.current_engine_rpm}")
-            if gtdp.throttle < 255:
+            if gtdp.throttle < self.MIN_THROTTLE:
                 # print("RUN RESET")
                 self.reset() #back to WAIT
             elif gtdp.current_engine_rpm < self.prev_rpm:
@@ -200,7 +201,7 @@ class GTAccelCollector():
 
         if self.state == 'MAYBE_REVLIMIT':
             # print(f"MAYBE REVLIMIT {gtdp.current_engine_rpm}")
-            if gtdp.throttle < 255:
+            if gtdp.throttle < self.MIN_THROTTLE:
                 self.reset()
             elif gtdp.current_engine_rpm <= self.peak_rpm:
                 self.revlimit_counter += 1
@@ -256,8 +257,8 @@ class GTAccelCollector():
 #the power curve
 class DataCollector():
     def __init__(self, config, keep_overflow=False, *args, **kwargs):
-        self.runcollector = GTAccelCollector(keep_overflow=keep_overflow)
-        self.dragcollector = GTDragCollector()
+        self.runcollector = GTAccelCollector(keep_overflow=keep_overflow, *args, **kwargs)
+        self.dragcollector = GTDragCollector(*args, **kwargs)
 
         self.accelrun = None
         self.dragrun = None

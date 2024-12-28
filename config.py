@@ -62,6 +62,7 @@ class config():
     hysteresis_percent_lower = 0.00
     hysteresis_percent_upper = 0.051 #up to 0.05
     
+    #TODO: confirm if shiftdump covers this data as well
     log_full_shiftdata = False
     log_basic_shiftdata = True
     we_beep_max = 30 #print previous packets for up to x packets after shift
@@ -88,11 +89,18 @@ class config():
     revlimit_round_offset = 10
     
     #round displayed shift RPM in GUI up to nearest x
-    shiftrpm_round = 25
+    shiftrpm_round = 50
     
     #determine if cars_on_track is considered or not when testing to skip loop
     includereplay = False
-        
+    
+    #toggle to place import graph button in GUI
+    import_graph_button = False
+    
+    #toggle to place speed stats button in GUI and whether loop function runs
+    speed_stats_active = False
+    speedstats_do_print = 'normal'
+    
     @classmethod
     def get_dict(cls):
         blocklist = ['update', 'get_dict', 'load_from', 'write_to']
@@ -111,6 +119,7 @@ class config():
                                    else f'audio/{value}')
                                                   for key, value in v.items()}
                 #update old sound location to new audio folder
+                #TODO: remove
                 if k == 'sound_file' and v[:6] != 'audio/':
                     v = f'audio/{v}'
                     

@@ -159,6 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-curves/
+WebPlotDigitizer-4.7-win32-x64/
 various/
 config.json
