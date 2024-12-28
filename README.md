@@ -2,8 +2,7 @@
 
 **Calibrated audio tone that indicates when to shift for optimal acceleration in Gran Turismo 7**
 
-![example Subaru WRX STI 2014 GUI](images/GUI.png)
-![example Subaru WRX STI 2014 Power](images/Power.png)
+![example Toyota GR Supra Racing Concept '18 GUI](images/GUI-1.png)
 
 ## Current release
 
@@ -22,6 +21,8 @@ GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as the
 
 # Information below this point is not required for using the shift tone
 
+Sample power curve:  
+![example Subaru WRX STI 2014 Power](images/Power.png)
 ## Implementation
 
 The Tone Offset is dynamic. The program keeps track of the time between a shift tone and an initiated shift, and modifies the running Tone Offset if the tone is early or late.
