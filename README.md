@@ -96,5 +96,5 @@ There is one packet per 16.667 milliseconds, approximately.
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
 - (Script only) On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on most consecutive launches
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
-- Linux support is untested
+- No Linux support: but only DPI scaling and sound rely on a Windows-only package
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
