@@ -87,7 +87,7 @@ Remote telemetry sends data at 60 packets per second. The offset variables (Tone
 There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
-- Assumptions: not grip limited, instantaneous shifts and no penalty to power after shifting (aka, a turbo)
+- Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous perfect shifts
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation.
 - The program assumes the car is driven with the stock Power curve, some upgrades will result in suboptimal shifts:
   - Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve.
