@@ -136,9 +136,9 @@ class PowerGraph():
         #if next-to-last tick is within 700 rpm: remove to avoid overlap
         xticks = ax.get_xticks()
         xticklabels = ax.get_xticklabels()
-        if final_rpm - xticks[-2] <= 700:
+        if final_rpm - xticks[-2] <= 800:
             xticklabels[-2] = ''
-        xticklabels[-1] = f'{final_rpm}\nrespected\nrevlimit'
+        xticklabels[-1] = f'{final_rpm}\n(respected)\nrevlimit'
         xticks[-1] = final_rpm
         ax.set_xticks(xticks)
         ax.set_xticklabels(xticklabels)
