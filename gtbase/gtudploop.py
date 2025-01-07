@@ -46,6 +46,11 @@ class GTUDPLoop():
         self.t = None
         self.timer = self.HEARTBEAT_TIMER
 
+        self.forward = None
+        if config.forward_ipaddress != '':
+            self.forward = (config.forward_ipaddress, config.forward_port)
+            print(f"Forwarding to {self.forward}")
+
         self.target_ip = config.target_ip
         self.loop_func = loop_func
 
@@ -137,7 +142,7 @@ class GTUDPLoop():
                 if loop_func is not None:
                     loop_func(gtdp)
         except BaseException as e:
-            print(e)
+            print(f'gtdp_loop: {e}')
         print("gtdp_loop ended")
 
     def send_heartbeat(self):
@@ -160,6 +165,8 @@ class GTUDPLoop():
     def nextGTdp(self):
         try:
             rawdata, _ = self.socket.recvfrom(1024)
+            if self.forward is not None:
+                self.socket.sendto(rawdata, self.forward)
             return GTDataPacket(rawdata)
         except BaseException as e:
             print(f"BaseException {e}")

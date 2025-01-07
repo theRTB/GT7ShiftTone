@@ -23,6 +23,11 @@ class ForzaUDPLoop():
         self.packet_format = config.packet_format
         self.loop_func = loop_func
 
+        self.forward = None
+        if config.forward_ipaddress != '':
+            self.forward = (config.forward_ipaddress, config.forward_port)
+            print(f"Forwarding to {self.forward}")
+
     def firststart(self):
         if self.port != '':
             self.toggle(True)
@@ -67,6 +72,8 @@ class ForzaUDPLoop():
     def nextFdp(self, server_socket):
         try:
             rawdata, _ = server_socket.recvfrom(1024)
+            if self.forward is not None:
+                self.socket.sendto(rawdata, self.forward)
             return ForzaDataPacket(rawdata, packet_format=self.packet_format)
         except BaseException as e:
             print(f"BaseException {e}")

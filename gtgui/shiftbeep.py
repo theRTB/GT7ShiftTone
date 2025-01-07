@@ -142,6 +142,7 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     def reset(self):
         super().reset()
         self.revbardata.reset()
+        self.speedstats.reset()
 
     #write all GUI configurable settings to the config file
     def config_writeback(self, varlist=WRITEBACK_VARS):        

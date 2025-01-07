@@ -21,8 +21,8 @@ class PowerWindow(PowerWindow):
     TITLE = "GTShiftTone: Power graph"
 
     def open_powergraph(self, curve, fig, revlimit_percent):
-        PowerGraph(curve, fig, revlimit_percent, self.ROUND_RPM,
-                   self.power_percentile, relative_power=True)
+        PowerGraph(curve=curve, fig=fig, round_rpm_n=self.ROUND_RPM,
+                   power_percentile=self.power_percentile, relative_power=True)
 
 #class responsible for handling a tkinter button in the gui to display the
 #power graph when it has been collected. The button is disabled until the user

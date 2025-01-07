@@ -117,6 +117,7 @@ class ShiftBeep(ShiftBeep):
 
     def reset(self, *args):
         super().reset()
+        self.speedstats.reset()
     
     #called when the car id has changed from loop_test_car_changed
     def print_car_changed(self, gtdp):
@@ -174,6 +175,7 @@ class ShiftBeep(ShiftBeep):
             self.tone_offset.decrement_counter()
             
         if shiftrpm is not None: #gtdp.gear is the upshifted gear, one too high
+            print(f'Speed: {packet.speed*3.6} kph')
             self.history.update(self.debug_target_rpm, shiftrpm, gtdp.gear-1, 
                                 self.tone_offset.get_counter())
             if self.dynamictoneoffset.get():

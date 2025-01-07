@@ -11,7 +11,7 @@ from gtbase.speedstats import SpeedTest, SpeedStats
 
 class GUISpeedTest(SpeedTest):
     varnames = ['start', 'end', 'min_distance', 'start_rpm', 'end_rpm', 
-                'time', 'distance']
+                'time', 'distance', 'fuel']
     def __init__(self, start, end, min_distance=0, start_rpm=0, end_rpm=0, 
                  *args, **kwargs):
         super().__init__(start, end, min_distance, start_rpm, end_rpm, 
@@ -25,6 +25,7 @@ class GUISpeedTest(SpeedTest):
         
         self.time = tkinter.DoubleVar(value=0)
         self.distance = tkinter.DoubleVar(value=0)
+        self.fuel = tkinter.DoubleVar(value=0)
         
     def reset(self):
         super().reset()
@@ -60,14 +61,14 @@ class SpeedWindow():
     def init_content(self, tests):
         columns = ['Start speed (kph)', 'End speed (kph)', 
                    'Minimum distance (m)', 'Start RPM', 'End RPM',
-                   'Time (s)', 'Distance\nTraveled (m)']
+                   'Time (s)', 'Distance\nTraveled (m)', 'Fuel used (%)']
         for column, label in enumerate(columns):
             tkinter.Label(self.window, text=label).grid(row=0, column=column)
         
         for row, test in enumerate(tests, start=1):
             for column, name in enumerate(GUISpeedTest.varnames):
                 tkinterfunc = tkinter.Entry
-                if name in ['time', 'distance']:
+                if name in ['time', 'distance', 'fuel']:
                     tkinterfunc = tkinter.Label
                 tkinterfunc(self.window, textvariable=getattr(test, name),
                          width=8, justify='right').grid(row=row, column=column)

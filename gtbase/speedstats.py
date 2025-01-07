@@ -34,6 +34,7 @@ class SpeedTest():
         
         self.time = Variable(0)
         self.distance = Variable(0)
+        self.fuel = Variable(0)
         
         self.packets = []
         self.runs = deque(maxlen=self.MAXRUNS)
@@ -56,6 +57,7 @@ class SpeedTest():
         
         self.time.set(0)
         self.distance.set(0)
+        self.fuel.set(0)
         
         self.state = self.INITIAL
     
@@ -113,8 +115,10 @@ class SpeedTest():
             self.packets.append(gtdp)        
 
             if self.end_condition(gtdp):
-                self.time.set(len(self.packets) / 60)
-                self.distance.set(get_distance(self.packets[0], gtdp))
+                self.time.set(round(len(self.packets) / 60, 2))
+                self.distance.set(round(get_distance(self.packets[0], gtdp), 2))
+                self.fuel.set(round(self.packets[0].fuel_level - 
+                                  self.packets[-1].fuel_level, 2))
                 self.state = self.FINISHED
         
         if self.state == self.FINISHED:
@@ -133,7 +137,10 @@ class SpeedTest():
         
         #case print result
         print(f'Start {self.start.get()} End {self.end.get()} Min Dist {self.min_distance.get()}\n'
-              f'Speeds: {start:.1f} - {end:.1f}, distance: {self.distance.get():.0f}, time: {self.time.get():.2f}\n')
+              f'Speeds: {start:.1f} - {end:.1f}',
+              f', distance: {self.distance.get():.0f}',
+              f', time: {self.time.get():.2f}',
+              f', fuel used: {self.fuel.get():.1f} %\n')
 
         #Most recent run is always first element
         self.runs.appendleft(self.packets.copy())

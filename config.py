@@ -10,9 +10,13 @@ from os.path import exists
 FILENAME_SETTINGS = 'config.json'
 
 class config():
-    target_ip = ''
-    port = 12350
-    packet_format = None
+    target_ip = '' #Can be manually set to PS IP to skip automatic detection
+    port = 12350 #Exclusive to Forza series
+    packet_format = None #Exclusive to Forza series
+    
+    #Optional IP-address and port to forward raw packets to
+    forward_ipaddress = ''
+    forward_port = 33741 #default GT7 port is 33740
     
     sound_file = 'audio/audiocheck.net_sin_1000Hz_-3dBFS_0.1s.wav'
     sound_files = {100:'audio/audiocheck.net_sin_1000Hz_-3dBFS_0.1s.wav',
