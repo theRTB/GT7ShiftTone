@@ -191,5 +191,5 @@ class GTUDPLoop():
         if self.t is not None:
             self.t.cancel() #abort any running timer
         print("Ended timer function for heartbeat")
-        self.threadPool.shutdown(wait=True)
+        self.threadPool.shutdown(wait=False)
         
