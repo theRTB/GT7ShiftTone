@@ -4,6 +4,9 @@
 
 ![example Toyota GR Supra Racing Concept '18 GUI](images/GUI-1.png)
 
+# Optimal shift points
+[Click here for optimal shift points with in-game visualization on when to shift](/plots)
+
 ## Current release
 
 GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as they tend to run under BoP with fixed settings:
