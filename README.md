@@ -5,7 +5,7 @@
 ![example Toyota GR Supra Racing Concept '18 GUI](images/GUI-1.png)
 
 # Optimal shift points
-[Click here for optimal shift points with in-game visualization on when to shift](/plots)
+[Click here for optimal shift points with visualization of in-game UI on when to shift](/plots)
 
 ## Current release
 
