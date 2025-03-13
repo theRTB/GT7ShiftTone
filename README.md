@@ -5,7 +5,7 @@
 ![example Toyota GR Supra Racing Concept '18 GUI](images/GUI-1.png)
 
 # Optimal shift points
-[Click here for optimal shift points with in-game visualization on when to shift](/plots)
+[Click here for optimal shift points with visualization of in-game UI on when to shift](/plots)
 
 ## Current release
 
@@ -14,13 +14,14 @@ GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as the
 - Be aware that false positives exist: not every beep is an upshift.
 
 ### Launch with:
-- gtbeep.py: For Python users  
 - GT7ShiftTone 0.51.exe: if you have downloaded the PyInstaller release
+- gtbeep.py: For Python users  
 
 **Changes:**  
 - Bundled the power curves of Group 1/2/3/4/B cars with the script code.
 - Program attempts to find a running Playstation on the network automatically.
 - Displayed shift points are rounded to the nearest 50. Internally, the program shifts to the precise value.
+- Added untested UDP forward in case of multiple UDP telemetry programs
 
 # Information below this point is not required for using the shift tone
 
