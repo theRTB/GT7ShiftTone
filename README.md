@@ -14,14 +14,14 @@ GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as the
 - Be aware that false positives exist: not every beep is an upshift.
 
 ### Launch with:
-- GT7ShiftTone 0.51.exe: if you have downloaded the PyInstaller release
+- GT7ShiftTone 0.51.exe: if you have downloaded the PyInstaller release - **PREVIOUS RELEASE, will be updated soon**
 - gtbeep.py: For Python users  
 
 **Changes:**  
-- Bundled the power curves of Group 1/2/3/4/B cars with the script code.
-- Program attempts to find a running Playstation on the network automatically.
-- Displayed shift points are rounded to the nearest 50. Internally, the program shifts to the precise value.
-- Added untested UDP forward in case of multiple UDP telemetry programs
+- Added 300+ stock curves
+- Added toggle in Settings to load stock curves for all cars: Disabled by default
+  - Emphasis on car being stock, or else the beep is simply incorrect
+- Added support for Linux through library simpleaudio
 
 # Information below this point is not required for using the shift tone
 
@@ -52,8 +52,8 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 ### Per gear:
 
 - **Target**: The derived shift RPM value.  
-- **Rel. Ratio**: The relative ratio of the gear ratios between two consecutive gears.  
-If gear 2 has a gear ratio of 2.375 and gear 3 has a gear ratio of 1.761, then the relative ratio is 2.375/1.761 ≈ 1.35: third gear is 35% longer than second gear.
+- **Rel. Ratio**: The relative ratio of the gear ratios between two consecutive gears.
+Say the next gear has a number of 1.35: It is 35% longer. Peak power is reached at a speed 35% higher, revlimit is reached at a speed 35% higher.
 - **Ratio**: The gear ratio of the gear
   - Toggle between Ratio and Rel. Ratio by double clicking the "Ratio" or "Rel. Ratio" label text
 
@@ -76,7 +76,7 @@ In **Settings**:
 
 ## Playstation IP-address
 
-The program will attempt to find an active Playstation console with Gran Turismo 7 active. It does this by assuming both the Playstation and the device the code runs on are on the same local network (the most common range of 192.168.x.y).  
+The program will attempt to find an active Playstation console with Gran Turismo 7 active. On Windows, it does this by assuming both the Playstation and the device the code runs on are on the same local network (the most common range of 192.168.x.y).  
 If that fails, you will need to find and manually set your console IP address into the UI:
 
 - Find the IP address by going to the PS Settings -> Network -> Connection Status -> View Connection Status -> IPv4 address
@@ -97,8 +97,9 @@ There is one packet per 16.667 milliseconds, approximately.
   - Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve.
   - Turbos affect the shape considerably and increase the cost of shifting
   - Upgrades that affect the RPM range of the engine
+  - Conversely, upgrades that maintain the same shape are fine: Such as ECU percentage adjustment
 - The default values are arbitrarily chosen and may not suit individual cars or track surface.
-- (Script only) On Windows the socket is not closed cleanly for no apparent reason: requiring a new console on most consecutive launches
+- (Script only) The socket is not always closed cleanly for no apparent reason: requiring a new console on most consecutive launches
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
-- No Linux support: but only DPI scaling and sound rely on a Windows-only package
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
+
