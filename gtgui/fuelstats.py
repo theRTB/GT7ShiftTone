@@ -131,8 +131,13 @@ class GUIFuelStats():
         self.button = tkinter.Button(root, text='Fuel\nStats', borderwidth=3,
                                      command=self.create_window)
         self.importwindow = FuelWindow(root, config)
+        
+        self.active = config.fuel_stats_active
 
     def update(self, gtdp):
+        if not self.active:
+            return
+        
         for test in self.tests:
             test.update(gtdp)
 

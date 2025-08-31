@@ -5,6 +5,8 @@ Created on Wed Aug  2 20:46:58 2023
 @author: RTB
 """
 
+from mttkinter import mtTkinter as tkinter
+
 from gtbase.gear import Gear, GearState, Gears
 from forzagui.gear import GenericGUIGear, GenericGUIGears
 
@@ -31,6 +33,8 @@ class GUIGear(GenericGUIGear, Gear):
         
     def __init__(self, number, root, config):
         super().__init__(number, root, config)
+        if number in [9, 10]:
+            self.label.config(state=tkinter.DISABLED)
 
     #override to skip gridding of variance
     def init_grid(self, column=None, starting_row=0):

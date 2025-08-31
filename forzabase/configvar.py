@@ -7,8 +7,9 @@ Created on Wed Aug  2 20:54:19 2023
 
 import statistics
 from collections import deque
+from threading import Timer
 
-from utility import packets_to_ms, Variable
+from utility import packets_to_ms, Variable, tryplaysound
 
 #maintain a rolling array of the time between beep and actual shift
 #caps to the lower and upper limits of the tone_offset variable to avoid
@@ -93,10 +94,83 @@ class ToneOffset(Variable, DynamicToneOffset):
         Variable.__init__(self, defaultvalue=config.tone_offset)
         DynamicToneOffset.__init__(self, tone_offset_var=self, config=config)
 
-class Volume(Variable):
+class BluetoothKeepalive():
+    def __init__(self):
+        pass
+
+#TODO: split Volume and BluetoothKeepalive
+class Volume(Variable, BluetoothKeepalive):
+    configvars = ['sound_file', 'sound_files', 
+                  'bluetooth_keepalive', 'bluetooth_keepalive_file', 
+                  'bluetooth_keepalive_duration', 'bluetooth_keepalive_delay']
+    
     def __init__(self, config):
         super().__init__(defaultvalue=config.volume)
 
+        for var in self.configvars:
+            value = getattr(config, var)
+            setattr(self, var, value)
+        
+        #None Timer so that we can always call the Timer functions elsewhere
+        self.t = Timer(0.0, lambda: None)
+        self.t.start()
+
+    def beep(self):
+        if (volume_level := self.get()) == 0:
+            return
+
+        filename = self.sound_files[volume_level]
+        # print(f"Playing {filename}")
+        tryplaysound(filename)
+    
+        if self.bluetooth_keepalive:
+            self.t.cancel()
+            delay = self.bluetooth_keepalive_duration
+            self.repeat_bluetooth_keepalive(delay=delay)
+
+    #Does not override a currently playing sound
+    #In case a beep is played when the bluetooth keepalive sound refreshes
+    def play_bluetooth_keepalive(self):
+        filename = self.bluetooth_keepalive_file
+        # print(f"Playing bluetooth keepalive! {filename}")
+        tryplaysound(filename)
+
+    #if delay is set, delay the first playing of the keepalive, play then loop
+    #otherwise, play keepalive and then loop
+    def repeat_bluetooth_keepalive(self, delay=None):
+        if delay is None:
+            # delay = (self.bluetooth_keepalive_duration +
+            #          self.bluetooth_keepalive_delay)
+            delay = self.bluetooth_keepalive_delay
+            self.play_bluetooth_keepalive()
+            
+        if self.bluetooth_keepalive:
+            self.t = Timer(delay, self.repeat_bluetooth_keepalive)
+            self.t.start()
+
+    def start_bluetooth_keepalive(self):
+        print("Starting bluetooth keepalive loop")
+        self.repeat_bluetooth_keepalive()
+    
+    #This will most likely stop a beep as well
+    def stop_bluetooth_keepalive(self):
+        print("Stopping bluetooth keepalive loop")
+        self.t.cancel()
+        tryplaysound(None)
+    
+    def start(self, force=False):
+        if force:
+            self.bluetooth_keepalive = True
+        self.start_bluetooth_keepalive()
+    
+    def stop(self):
+        if self.bluetooth_keepalive:
+            self.stop_bluetooth_keepalive()
+    
+    def reset(self):
+        self.stop()
+        self.start()
+       
 class RevlimitOffset(Variable):
     def __init__(self, config):
         super().__init__(defaultvalue=config.revlimit_offset)

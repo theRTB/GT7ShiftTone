@@ -20,10 +20,12 @@ from gtbase.gear import Gears, MAXGEARS
 from gtbase.enginecurve import EngineCurve
 from gtbase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
                               RevlimitPercent, RevlimitOffset, ToneOffset, 
-                              IncludeReplay, Volume)
+                              IncludeReplay, Volume, StockCurveToggle,
+                              BoPCurveToggle)
 from gtbase.lookahead import Lookahead
 from gtbase.datacollector import DataCollector
 from gtbase.speedstats import SpeedStats
+from gtbase.shiftstats import ShiftStats
 
 from utility import Variable
 
@@ -77,6 +79,7 @@ class ShiftBeep(ShiftBeep):
           # 'loop_calculate_shiftrpms',#derive shift rpm if possible
          'loop_test_for_shiftrpm',#test if we have shifted
          'loop_update_speedstats', #update speed tests (0-100 for example)
+         'loop_update_shiftstats', #update shift tests (blinky vs beep)
          'loop_beep',             #test if we need to beep
          'debug_log_full_shiftdata'             
             ]
@@ -93,6 +96,7 @@ class ShiftBeep(ShiftBeep):
         self.history = History(config)
         
         self.speedstats = SpeedStats(config)
+        self.shiftstats = ShiftStats(config)
         
         self.car_ordinal = CarOrdinal()
         
@@ -102,6 +106,9 @@ class ShiftBeep(ShiftBeep):
         self.revlimit_offset = RevlimitOffset(config)
         self.dynamictoneoffset = DynamicToneOffsetToggle(config)
         self.includereplay = IncludeReplay(config)
+
+        self.stock_curve_toggle = StockCurveToggle(config)
+        self.bop_curve_toggle = BoPCurveToggle(config)
         
         self.rpm = RPM(hysteresis_percent=self.hysteresis_percent)
         self.volume = Volume(config)
@@ -118,6 +125,7 @@ class ShiftBeep(ShiftBeep):
     def reset(self, *args):
         super().reset()
         self.speedstats.reset()
+        self.shiftstats.reset()
     
     #called when the car id has changed from loop_test_car_changed
     def print_car_changed(self, gtdp):
@@ -130,14 +138,26 @@ class ShiftBeep(ShiftBeep):
     def handle_curve_change(self, gtdp, *args, **kwargs):
         print("Updating gears")
         self.gears.update(gtdp)
+
+        bop_toggle = self.bop_curve_toggle
+        load_stock = (self.stock_curve_toggle.get() or
+                      (bop_toggle.get() and bop_toggle.car_in_grouplist(gtdp)))
+
+        # super().handle_curve_change(gtdp, load_stock, *args, **kwargs)
         super().handle_curve_change(gtdp, *args, **kwargs)
         self.speedstats.set_revlimit(self.revlimit.get())
+        # else:
+        #     print("Stock curve toggle or BoP curve toggle forbids loading of curve")
 
     def loop_update_speedstats(self, gtdp):
         if config.speed_stats_active:
             self.speedstats.update(gtdp)
+            
+    def loop_update_shiftstats(self, gtdp):
+        if config.shift_stats_active:
+            self.shiftstats.update(gtdp)
     
-    #Function to derive the rpm the player started an upshift at full throttle
+    #Function to derive the RPM the player started an upshift at full throttle
     #GT7 has a convenient boolean if we are in gear. Therefore any time we are
     #not in gear and there is an increase in the gear number, there has been
     #an upshift. 
@@ -165,7 +185,7 @@ class ShiftBeep(ShiftBeep):
         for packet in self.shiftdelay_deque:
             if packet.throttle == 0: #TODO: is this useful?
                 break
-            if (not prev_packet.in_gear and packet.in_gear):
+            if not prev_packet.in_gear and packet.in_gear:
                 gear_change = True
             if (gear_change and 
                 (prev_packet.throttle < 255 and packet.throttle == 255)):
@@ -189,6 +209,13 @@ class ShiftBeep(ShiftBeep):
         return not(self.includereplay.test(gtdp) and 
                (1 <= int(gtdp.gear) <= MAXGEARS) and
                not gtdp.loading and not gtdp.paused)
+
+    #override test_for_beep to exclude beeping during replays, paused/loading
+    #paused/loading is not that important given that RPM shouldn't be changing
+    def test_for_beep(self, shiftrpm, gtdp):
+        if gtdp.paused or gtdp.loading or not gtdp.cars_on_track:
+            return False
+        return super().test_for_beep(shiftrpm, gtdp)
 
 def main():
     global gtbeep #for debugging

@@ -15,8 +15,10 @@ class config():
     packet_format = None #Exclusive to Forza series
     
     #Optional IP-address and port to forward raw packets to
+    #TODO: add to GUI Settings
     forward_ipaddress = ''
     forward_port = 33741 #default GT7 port is 33740
+    heartbeat_content = 'A' #A or B or ~. Only A works in sports content
     
     sound_file = 'audio/audiocheck.net_sin_1000Hz_-3dBFS_0.1s.wav'
     sound_files = {100:'audio/audiocheck.net_sin_1000Hz_-3dBFS_0.1s.wav',
@@ -35,6 +37,17 @@ class config():
     
     volume = 75 #default volume
     
+    #Optional keepalive function. Bluetooth has a tendency to go into power
+    #saving when there is no sound being played. Hence we loop a sound to avoid
+    #this. If we don't, most beeps don't play or are seriously delayed.
+    #duration is the duration of the sound_files, we use this as delay between
+    #playing the beep and restarting the keepalive loop
+    #delay is the delay between triggers of playing the keepalive sound
+    bluetooth_keepalive = False
+    bluetooth_keepalive_file = "audio/audiocheck.net_sin_100Hz_-72dBFS_2s.wav"
+    bluetooth_keepalive_duration = 0.2
+    bluetooth_keepalive_delay = 1.5
+    
     window_scalar = 1 #scale window by this factor
     window_x = None
     window_y = None
@@ -50,9 +63,9 @@ class config():
 
     dynamictoneoffset = 1 #1 is true, 0 is false
     tone_offset = 17 #if specified rpm predicted to be hit in x packets: beep
-    tone_offset_lower =  9
-    tone_offset_upper = 25
-    tone_offset_outlier = 30 #discard for dynamic tone if above this distance
+    tone_offset_lower =  6
+    tone_offset_upper = 30
+    tone_offset_outlier = 36 #discard for dynamic tone if above this distance
     
     revlimit_percent = 0.98 #respected rev limit for trigger revlimit as pct%
     revlimit_percent_lower = 0.900
@@ -97,13 +110,25 @@ class config():
     
     #determine if cars_on_track is considered or not when testing to skip loop
     includereplay = False
-    
+
+    #bop_curve_toggle True is: load Gr. cars, SF19/23, RB2019 curves
+    #if stock_curve_toggle True, load non-group cars as well
+    #Stock overrules bop
+    bop_curve_toggle = True
+    stock_curve_toggle = False
+
     #toggle to place import graph button in GUI
     import_graph_button = False
     
     #toggle to place speed stats button in GUI and whether loop function runs
     speed_stats_active = False
     speedstats_do_print = 'normal'
+    
+    #toggle to place shift stats button in GUI and whether loop function runs
+    shift_stats_active = False
+    
+    #toggle to place fuel stats button in GUI and whether loop function runs
+    fuel_stats_active = False
     
     @classmethod
     def get_dict(cls):
@@ -118,7 +143,8 @@ class config():
         with open(filename) as file:
             file_config = json.load(file)
             for k,v in file_config.items(): 
-                if k == 'sound_files': #json saves keys as string, force to int
+                #json saves keys as string, force to int
+                if k in ['sound_files', 'bluetooth_keepalive_sound_files']: 
                     v = {int(key):(value if value[:6] == 'audio/' 
                                    else f'audio/{value}')
                                                   for key, value in v.items()}

@@ -9,8 +9,9 @@ import csv
 import numpy as np
 from os.path import exists
 
+# create folder structure if it doesn't exist
 from os import makedirs
-makedirs('curves/', exist_ok=True) #create curves folder if not exists
+makedirs('curves/', exist_ok=True)
 
 from utility import simplify_curve, round_to
 
@@ -31,16 +32,17 @@ class EngineCurve():
     DELIMITER = '\t'
     ENCODING = 'ISO-8859-1' #why not UTF-8?
     FOLDER = 'curves'
-    FILENAME = lambda _, gtdp: f'{EngineCurve.FOLDER}/{gtdp.car_ordinal}.tsv'
+    FILENAME = lambda _, fdp: f'{EngineCurve.FOLDER}/{fdp.car_ordinal}.tsv'
     ROUND = 100 #round the saved curve to multiples of round
     DECIMALS = 1 #save power/torque to 1 decimal accuracy
     ROUND_REVLIMIT = 50 #covers 99.9% of all standard revlimits
-    
-    #code duplication, but calling reset in __init__ causes issues with
-    #inheritance
+
     def __init__(self, config, *args, **kwargs):
-        for var in ['curve_state', 'rpm', 'power', 'torque', 'revlimit']:
-            setattr(self, var, None)
+        self.curve_state = None
+        self.rpm = None
+        self.power = None
+        self.torque = None
+        self.revlimit = None
 
     def reset(self):
         for var in ['curve_state', 'rpm', 'power', 'torque', 'revlimit']:
@@ -50,42 +52,43 @@ class EngineCurve():
         return self.curve_state == True
 
     #called once to update curve
-    def update(self, gtdp, *args, **kwargs):
+    def update(self, fdp, *args, **kwargs):
         if self.curve_state:
-            return #this should not happen though
-        
-        filename = self.FILENAME(gtdp) if gtdp is not None else None
-        if len(kwargs) > 0:
+            return
+
+        if 'accelrun' in kwargs.keys() and 'dragrun' in kwargs.keys():
             self.curve_state = True
-            if 'accelrun' in kwargs.keys() and 'dragrun' in kwargs.keys():
-                self.init_from_run(*args, **kwargs)
-            elif 'rpm' in kwargs.keys() and 'power' in kwargs.keys():
-                self.init_from_importgraph(*args, **kwargs)
-            else:
-                self.curve_state = False
-                print("no curve init done, something failed")
-                return
-            
-            if gtdp.car_ordinal:
+            self.init_from_run(*args, **kwargs)
+
+            filename = self.FILENAME(fdp) if fdp is not None else None
+            if fdp.car_ordinal:
                 self.save(filename)
                 print(f'Saved curve to {filename}')
             else:
                 print("Curve not saved: no car ordinal")
-        elif filename and exists(filename): #file exists
-            self.load(filename)
-            self.curve_state = True
-            print(f'Loaded curve from {filename}')
+        elif self.file_exists(fdp):
+            self.init_from_file(fdp, *args, **kwargs)
+            #curve_state set to true in function
         else:
             self.curve_state = False
             print("No curve loaded, waiting for DataCollector")
 
-    # def init_from_file(self, filename, *args, **kwargs):
-    #     self.load(filename)
-    
-    def init_from_importgraph(self, rpm, power):
-        self.rpm = rpm
-        self.power = power
-        self.revlimit = rpm[-1]
+    #TODO: consider rewriting to use path library
+    def file_exists(self, fdp):
+        if fdp is None:
+            return False
+
+        filename = self.FILENAME(fdp)
+        return exists(filename)
+
+    #gtdp is assumed to not be None here because files_exist tests for this
+    def init_from_file(self, fdp, *args, **kwargs):
+        filename = self.FILENAME(fdp)
+        if exists(filename):
+            self.load(filename)
+            print(f'Loaded curve from {filename}')
+            self.curve_state = True
+
     
     #TODO: get revlimit from runcollector
     def init_from_run(self, run, *args, **kwargs):

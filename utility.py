@@ -62,17 +62,53 @@ def deloop_and_sort(array, key_x, key_y, key_sort, max_loop=50):
 def round_to(val, n):
     return round(val/n)*n
 
-
-
-import winsound
+#TODO: Consider pydub
 from config import config
+import os
+if os.name == 'nt':
+    import winsound
+        
+    #attempt to play filename async
+    def tryplaysound(filename=None):
+        try:
+            winsound.PlaySound(filename, (winsound.SND_FILENAME |
+                                          winsound.SND_ASYNC |
+                                          winsound.SND_NODEFAULT))
+        except:
+            print(f"Sound failed to play: {filename}")
 
-def beep(filename=config.sound_file):
-    try:
-        winsound.PlaySound(filename, (winsound.SND_FILENAME | 
-                           winsound.SND_ASYNC | winsound.SND_NODEFAULT))
-    except:
-        print(f"Sound failed to play: {filename}")
+    #This should be legacy?
+    def beep(filename=config.sound_file):
+        try:
+            winsound.PlaySound(filename, (winsound.SND_FILENAME |
+                                          winsound.SND_ASYNC |
+                                          winsound.SND_NODEFAULT))
+        except:
+            print(f"Sound failed to play: {filename}")
+else: #assume Linux
+    import simpleaudio as sa
+    soundcache = {}
+    def tryplaysound(filename=None):
+        if filename is None:
+            sa.stop_all()
+            return
+
+        wave_obj = soundcache.get(filename, None)
+        if wave_obj is None:
+            try:
+                wave_obj = sa.WaveObject.from_wave_file(filename)
+                soundcache[filename] = wave_obj
+            except:
+                print(f"Could not load sound file: {filename}")
+                return
+
+        try:
+            wave_obj.play()
+        except:
+            print(f"Sound failed to play: {filename}")
+
+    def beep(filename=config.sound_file):
+        tryplaysound(filename=filename)
 
 from threading import Timer
 def multi_beep(filename=config.sound_file, duration=0.1, count=2, delay=0.1):
@@ -159,12 +195,28 @@ def rolling_avg(y, box_pts, mode='valid'):
 #x is assumed to be sorted and increases monotonically
 #optionally include a 'true' xmax to extend/shorten the curve to
 #the final point of x array is included
-def simplify_curve(x, y, xmax=None, n=100):
-    xmax = x[-1] if xmax is None else xmax
-    startx = math.ceil(x[0]/n)*n
-    newx = np.arange(startx, xmax+1, n)
-    newy = np.interp(newx, x, y)
+# def simplify_curve(x, y, xmax=None, n=100):
+#     xmax = x[-1] if xmax is None else xmax
+#     startx = math.ceil(x[0]/n)*n
+#     newx = np.arange(startx, xmax+1, n)
+#     newy = np.interp(newx, x, y)
     
+#     return (newx, newy)
+def simplify_curve(x, y, xmin=None, xmax=None, n=500):
+    xmax = x[-1] if xmax is None else xmax
+    startx = math.floor(x[0]/n)*n if xmin is None else xmin
+    newx = np.arange(startx, xmax+1, n)
+    
+    starty = (y[0] - y[3]) / (x[0] - x[3]) * (startx - x[0]) + y[0]
+    endy = (y[-1] - y[-4]) / (x[-1] - x[-4]) * (xmax - x[-1]) + y[-1]
+    
+    #TODO: use statistics.linear_regression
+    
+    if xmax is not None and xmax % n != 0:
+        newx = np.append(newx, xmax)
+        
+    newy = np.interp(newx, x, y, left=starty, right=endy)
+
     return (newx, newy)
 
 #Derives an rpm/torque curve from an rpm/accel curve up to revlimit along with
@@ -198,7 +250,8 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
     
     if interval:
         rpmmax = accelrun.revlimit
-        rpm, torque = simplify_curve(rpm_shape, torque_shape, rpmmax, interval)
+        rpm, torque = simplify_curve(rpm_shape, torque_shape, 
+                                     xmax=rpmmax, n=interval)
     
     power = torque * rpm
     

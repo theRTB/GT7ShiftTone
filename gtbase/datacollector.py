@@ -10,21 +10,27 @@ from utility import rolling_avg
 
 #can be initialized from a Curve or an array of ForzaDataPacket
 #TODO: rename to something like ForzaDPNPArray?
+#TODO: setting props fails if packets is a Curve
+#TODO: Just rewrite this.
 class Curve ():
     def __init__(self, packets):
         if type(packets) == list:
             packets = sorted(packets, key=lambda p: p.packet_id)
             if len(packets) != packets[-1].packet_id - packets[0].packet_id +1:
                 print("Curve warning: missing packets")
-            self.gear = packets[0].gear
+            # self.gear = packets[0].gear
             self.props = packets[0].get_props()
+                
+            for prop in self.props:
+                array = np.array([getattr(p, prop) for p in packets])
+                setattr(self, prop, array)
         else:
-            self.gear = packets.gear
+            # self.gear = packets.gear
             self.props = packets.get_props()
-
-        for prop in self.props:
-            array = np.array([getattr(p, prop) for p in packets])
-            setattr(self, prop, array)
+            
+            for prop in self.props:
+                array = np.array(getattr(packets,prop)) #implicit copy
+                setattr(self, prop, array)
 
         #aliases
         # self.rpm = self.current_current_engine_rpm #FM8

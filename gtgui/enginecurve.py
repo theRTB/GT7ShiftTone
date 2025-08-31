@@ -18,7 +18,7 @@ from forzagui.enginecurve import PowerGraph, PowerWindow, GenericGUIEngineCurve
 
 #class responsible for creating a tkinter window for the power graph
 class PowerWindow(PowerWindow):
-    TITLE = "GTShiftTone: Power graph"
+    TITLE = "GT7ShiftTone: Power graph"
 
     def open_powergraph(self, curve, fig, revlimit_percent):
         PowerGraph(curve=curve, fig=fig, round_rpm_n=self.ROUND_RPM,
@@ -28,7 +28,7 @@ class PowerWindow(PowerWindow):
 #power graph when it has been collected. The button is disabled until the user
 #has collected a curve.
 class GUIEngineCurve(GenericGUIEngineCurve, EngineCurve):
-    TITLE = "GTShiftTone: Power graph"
+    TITLE = "GT7ShiftTone: Power graph"
     def __init__(self, root, handler, config):
         super().__init__(root, handler, config)
         self.root = root
@@ -37,3 +37,21 @@ class GUIEngineCurve(GenericGUIEngineCurve, EngineCurve):
                                      borderwidth=3,
                                      command=handler, state=tkinter.DISABLED)
         self.powerwindow = PowerWindow(root, config)
+
+    def update(self, gtdp, *args, **kwargs):
+        if 'rpm' in kwargs.keys() and 'power' in kwargs.keys():
+            self.curve_state = True
+            self.init_from_importgraph(*args, **kwargs)
+            if gtdp.car_ordinal:
+                filename = self.FILENAME(gtdp) if gtdp is not None else None
+                self.save(filename)
+                print(f'Saved curve to {filename}')
+            else:
+                print("Curve not saved: no car ordinal")
+
+        super().update(gtdp, *args, **kwargs)
+
+    def init_from_importgraph(self, rpm, power):
+        self.rpm = rpm
+        self.power = power
+        self.revlimit = rpm[-1]

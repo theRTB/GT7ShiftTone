@@ -8,7 +8,7 @@ Created on Wed Aug  2 20:54:19 2023
 import numpy as np
 from mttkinter import mtTkinter as tkinter
 
-from forzabase.configvar import DynamicToneOffset
+from forzabase.configvar import DynamicToneOffset, Volume
 
 from utility import (packets_to_ms, ms_to_packets, round_to,
                      factor_to_percent, percent_to_factor, Variable)
@@ -225,9 +225,10 @@ class GUIPeakPower():
         self.tkvar.set(self.defaultguivalue)
 
 #this class depends on how the volume steps in config are defined
-class GUIVolume():
+class GUIVolume(Volume):
     MIN, MAX, STEP = 0, 100, 25
     def __init__(self, root, config):
+        super().__init__(config)
         frame = tkinter.Frame(root)
         self.frame = frame
         self.label = tkinter.Label(frame, text='Volume')
@@ -267,7 +268,7 @@ class GUIVolume():
 #         self.button.invoke()
 
 class GUIConfigWindow():
-    TITLE='GTShiftTone: Settings'
+    TITLE='ForzaShiftTone: Settings'
     CLASSES = { 'hysteresis_percent': GUIHysteresisPercent, 
                 'revlimit_percent':   GUIRevlimitPercent,
                 'revlimit_offset':    GUIRevlimitOffset,
@@ -291,6 +292,7 @@ class GUIConfigWindow():
         return (root.winfo_x(),  #why not rootx?
                 root.winfo_rooty() + root.winfo_height())
 
+    #TODO: write out how this works
     def handle_adjustables(self):
         for row, (name, var) in enumerate(self.adjustables.items()):
             gui_var = self.CLASSES[name](self.window, self.config, var)

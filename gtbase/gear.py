@@ -75,6 +75,6 @@ class Gears(Gears):
             if gtdp.gears[gear.gear] != 0.000:
                 gear.update(gtdp, prevgear)
                 highest += 1
-        if self.highest is not None:
+        if self.highest is None:
             self.highest = highest
             print(f'Highest gear: {self.highest}')

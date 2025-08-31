@@ -6,10 +6,16 @@ Created on Tue Aug 13 22:33:15 2024
 """
 
 import numpy as np
+from os.path import exists
 
 from forzabase.enginecurve import EngineCurve
 
 from utility import np_drag_fit
+
+#Create stock folder within curves if it doesn't exist
+#This shouldn't happen on a default installation
+from os import makedirs
+makedirs('curves/stock/', exist_ok=True)
 
 #poorly named: does not extend Curve
 #Given an array of consecutive rpm/accel points at full throttle and an array
@@ -28,7 +34,36 @@ class EngineCurve(EngineCurve):
         self.revlimit = accelrun.revlimit
         self.rpm, self.torque, self.power = result
         
-        self.correct_final_point()
+        # self.correct_final_point()
+
+    #TODO: consider rewriting to use path library
+    #If file exists in base curves folder, it takes precedence over stock
+    def file_exists(self, gtdp):
+        if gtdp is None:
+            return False
+
+        filename_stock = f'{EngineCurve.FOLDER}/stock/{gtdp.car_ordinal}.tsv'
+
+        return super().file_exists(gtdp) or exists(filename_stock)
+
+    #gtdp is assumed to not be None here because files_exist tests for this
+    def init_from_file(self, gtdp, load_stock=True, *args, **kwargs):
+        super().init_from_file(gtdp)
+        if self.curve_state:
+            return
+
+        if not load_stock:
+            print("Stock curve toggle or BoP curve toggle forbids loading of curve")
+            return
+
+        filename_stock = f'{EngineCurve.FOLDER}/stock/{gtdp.car_ordinal}.tsv'
+        if exists(filename_stock):
+            self.load(filename_stock)
+            print(f'Loaded stock curve from {filename_stock}')
+            self.curve_state = True
+            return
+
+        print(f'init_from_file called but {self.FILENAME(gtdp)} and {filename_stock} do not exist')
 
     def correct_final_point(self):
         x1, x2 = self.rpm[-2:]

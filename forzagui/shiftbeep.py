@@ -13,10 +13,12 @@ from mttkinter import mtTkinter as tkinter
 import tkinter.ttk
 
 #tell Windows we are DPI aware
-import ctypes
-PROCESS_SYSTEM_DPI_AWARE = 1
-PROCESS_PER_MONITOR_DPI_AWARE = 2
-ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
+import os
+if os.name == 'nt':
+    import ctypes
+    PROCESS_SYSTEM_DPI_AWARE = 1
+    PROCESS_PER_MONITOR_DPI_AWARE = 2
+    ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE)
 
 #TODO: is there an alternative way to use config?
 from config import config, FILENAME_SETTINGS
@@ -169,14 +171,6 @@ class GenericGUIShiftBeep():
         
         self.peakpower.set(*self.curve.get_peakpower_tuple())
 
-    def close(self):
-        #Used to update WIDTH and HEIGHT if necessary
-        # print(f'x {self.root.winfo_width()}, y {self.root.winfo_height()}')
-        
-        self.config_writeback()
-        super().close()
-        self.root.destroy()
-
     #write all GUI configurable settings to the config file
     def config_writeback(self, varlist=WRITEBACK_VARS):
         #grab x,y position to save as window_x and window_y
@@ -184,6 +178,14 @@ class GenericGUIShiftBeep():
         self.window_y = Variable(self.root.winfo_y())
                 
         super().config_writeback(varlist)
+
+    def close(self):
+        #Used to update WIDTH and HEIGHT if necessary
+        # print(f'x {self.root.winfo_width()}, y {self.root.winfo_height()}')
+        
+        self.config_writeback()
+        super().close()
+        self.root.destroy()
 
 class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     def __init__(self):

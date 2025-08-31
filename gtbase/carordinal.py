@@ -30,8 +30,8 @@ def load_csv(filename, index, as_integer=[]):
     return data
     
 class CarData():
-    FILENAME_CAR = 'database\cars.csv'
-    FILENAME_MAKER = 'database\maker.csv'
+    FILENAME_CAR = 'database/cars.csv'
+    FILENAME_MAKER = 'database/maker.csv'
     AS_INTEGER = ['ID', 'Maker']
     INDEX = 'ID'
     
@@ -58,3 +58,26 @@ class CarOrdinal(Variable):
     
     def get_name(self):
         return CarData.get_name(self.get())
+
+
+class GroupData():
+    FILENAME_CAR = 'database/cargrp.csv'
+    AS_INTEGER = ['ID']
+    INDEX = 'ID'
+
+    groupdata = load_csv(FILENAME_CAR, INDEX, AS_INTEGER)
+
+    @classmethod
+    def get(cls, car_id):
+        return cls.groupdata.get(car_id, {}).get('Group', '')
+
+    #Return True if car is Gr 1,2,3,4,B
+    @classmethod
+    def is_in_groups(cls, car_id):
+        return cls.get(car_id) in ['1', '2', '3', '4', 'B']
+
+    #Return True if car is Gr 1,2,3,4,B, SF19, SF23, X2019
+    @classmethod
+    def is_considered_bop(cls, car_id):
+        return (cls.is_in_groups(car_id) or
+                car_id in [3372, 3371, 3529, 3528, 3374])

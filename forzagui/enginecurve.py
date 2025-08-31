@@ -29,7 +29,7 @@ from forzabase.enginecurve import EngineCurve
 # underfill based on power equal or higher than power_percentile
 # extra arguments are passed to the created figure if fig is None
 class PowerGraph():
-    def __init__(self, curve, fig=None, revlimit_percent=.98, round_rpm_n=50,
+    def __init__(self, curve, fig=None, revlimit_percent=1, round_rpm_n=50,
                  power_percentile=.90, relative_power=False, *args, **kwargs):
         #if fig is None call plt.show() at the end of this function
         if plt_show := (fig is None):
@@ -45,6 +45,14 @@ class PowerGraph():
         curve_filter = curve.rpm <= revlimit_percent*revlimit
         rpm = curve.rpm[curve_filter]
         power = curve.power[curve_filter]
+        
+        #if number of points is too low, the power percentile is inaccurate
+        #and the revlimit_percent is also inaccurate
+        if len(rpm) < 50:
+            rpm_ = np.arange(min(rpm), max(rpm)+1, 10)
+            power = np.interp(rpm_, rpm, power)
+            rpm = rpm_
+        
         if relative_power:
             power = power / max(power) * 100 #convert to percentage
 
@@ -276,8 +284,8 @@ class GenericGUIEngineCurve():
                                      command=handler, state=tkinter.DISABLED)
         self.powerwindow = PowerWindow(root, config)
 
-    def update(self, gtdp, *args, **kwargs):
-        super().update(gtdp, *args, **kwargs)
+    def update(self, fdp, *args, **kwargs):
+        super().update(fdp, *args, **kwargs)
         if self.is_loaded(): #NOTE: this is from EngineCurve
             self.enable()
 

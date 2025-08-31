@@ -88,6 +88,7 @@ class ShiftBeep():
         self.shiftdelay_deque = deque(maxlen=120)
 
     def reset(self, *args):
+        self.volume.reset() #triggers start of bluetooth keepalive
         self.rpm.reset()
         self.history.reset()
         self.car_ordinal.reset()
@@ -238,8 +239,9 @@ class ShiftBeep():
 
     #play beep depending on volume. If volume is zero, skip beep
     def do_beep(self):
-        if volume_level := self.volume.get():
-            beep(filename=config.sound_files[volume_level])
+        self.volume.beep()
+        # if volume_level := self.volume.get():
+        #     beep(filename=config.sound_files[volume_level])
 
     def loop_beep(self, fdp):
         if fdp.gear > MAXGEARS:
@@ -365,6 +367,7 @@ class ShiftBeep():
 
     def close(self):
         self.loop.close()
+        self.volume.stop()
         self.config_writeback()
 
 def main():

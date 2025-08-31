@@ -35,7 +35,7 @@ class GTUDPLoop():
     HEARTBEAT_PORT = 33739
     HEARTBEAT_TIMER = 10 # in seconds
     HEARTBEAT_TIMER_FAST = 1 # in seconds
-    HEARTBEAT_CONTENT = b'A'
+    HEARTBEAT_CONTENT = b'A' #default if config does not contain it
     BROADCAST_ADDRESS = '255.255.255.255'
     
     def __init__(self, config, loop_func=None):
@@ -44,6 +44,12 @@ class GTUDPLoop():
         self.isRunning = False
         self.socket = None
         self.t = None
+
+        # JSON does not support bytearray, so we need to convert it
+        # Should be a single character: A, B, C and ~ currently known
+        config_heartbeat_content = getattr(config, 'heartbeat_content',
+                                         self.HEARTBEAT_CONTENT)
+        self.heartbeat_content = config_heartbeat_content.encode()
         self.timer = self.HEARTBEAT_TIMER
 
         self.forward = None
@@ -56,7 +62,7 @@ class GTUDPLoop():
 
     def init_socket(self):
         local_ip = self.derive_local_address()
-        print(f'Derived local IP: {local_ip if local_ip else "UNKNOWN"}')
+        print(f'Derived local IP: {local_ip if local_ip else "UNKNOWN, using: ''"}')
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -148,7 +154,7 @@ class GTUDPLoop():
     def send_heartbeat(self):
         address = (self.target_ip, self.HEARTBEAT_PORT)
         if self.socket is not None:
-            self.socket.sendto(self.HEARTBEAT_CONTENT, address)
+            self.socket.sendto(self.heartbeat_content, address)
             print(f"Heartbeat sent to {address}")
         else:
             print("Socket was closed for heartbeat")
@@ -187,9 +193,12 @@ class GTUDPLoop():
         return self.isRunning
 
     def close(self):
-        self.isRunning = False
+        def stopping():
+            print("Stopping loop")
+            self.isRunning = False
+        self.threadPool.submit(stopping)
         if self.t is not None:
             self.t.cancel() #abort any running timer
         print("Ended timer function for heartbeat")
-        self.threadPool.shutdown(wait=False)
+        self.threadPool.shutdown(wait=True)
         

@@ -10,7 +10,7 @@ import numpy as np
 from mttkinter import mtTkinter as tkinter
 import tkinter.ttk #for tkinter.font? TODO: does this even make mttkinter work
 
-EXPLANATION = '''Open WebPlotDigitizer-4.7-win32-x64\WebPlotDigitizer-4.7.exe
+EXPLANATION = '''Open WebPlotDigitizer-4.7-win32-x64/WebPlotDigitizer-4.7.exe
 Load image (crop image to just the graph for ease of selecting points)
 2D (X-Y) plot
 Align Axes, Proceed

@@ -30,8 +30,8 @@ class GUISpeedTest(SpeedTest):
     def reset(self):
         super().reset()
         
-    def update(self, gtdp):
-        super().update(gtdp)
+    # def update(self, gtdp):
+    #     return super().update(gtdp)
 
 class SpeedWindow():
     TITLE = "GT7ShiftTone: Speed statistics"
@@ -91,6 +91,11 @@ class GUISpeedStats(SpeedStats):
         
         self.tests = [GUISpeedTest(*entry, do_print=self.do_print) 
                                                       for entry in self.BASE]
+        
+        #apply trickery to have a single start and end speed for all tests
+        for test in self.tests[1:]:
+            test.start = self.tests[0].start
+            test.end = self.tests[0].end
         
         self.button = tkinter.Button(root, text='Speed\nStats', 
                                      borderwidth=3,

@@ -17,7 +17,7 @@ def get_distance(gtdp1, gtdp2):
 
 class SpeedTest():
     INITIAL, WAIT, RUNNING, FINISHED = 0,1,2,3
-    MAXRUNS = 1
+    MAXRUNS = 5
     #do_print is None, all
     #default is print result
     #all is print entire packet
@@ -30,7 +30,7 @@ class SpeedTest():
         self.start_rpm = Variable(start_rpm)
         self.end_rpm = Variable(end_rpm)
         
-        self.use_revlimit = end_rpm == -1
+        self.use_revlimit = (end_rpm == -1)
         
         self.time = Variable(0)
         self.distance = Variable(0)
@@ -124,8 +124,12 @@ class SpeedTest():
         if self.state == self.FINISHED:
             self.run_finished()
             self.state = self.INITIAL
+            return True #return true if run finished
             
     def run_finished(self):
+        #Most recent run is always first element
+        self.runs.appendleft(self.packets.copy())
+        
         if self.do_print is None:
             return
         
@@ -142,8 +146,6 @@ class SpeedTest():
               f', time: {self.time.get():.2f}',
               f', fuel used: {self.fuel.get():.1f} %\n')
 
-        #Most recent run is always first element
-        self.runs.appendleft(self.packets.copy())
 
 class SpeedStats():
     BASE = [

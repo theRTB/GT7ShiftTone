@@ -17,7 +17,7 @@ from utility import Variable
 #TODO: FH car list
     
 class CarData():
-    FILENAME_CAR = 'database\cars_keys.json'
+    FILENAME_CAR = 'database/cars_keys.json'
     
     if exists(FILENAME_CAR):
         with open(FILENAME_CAR) as raw:
