@@ -21,7 +21,7 @@ GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as the
 - Added 300+ stock curves
 - Added toggle in Settings to load stock curves for all cars: Disabled by default
   - Emphasis on car being stock, or else the beep is simply incorrect
-- Added support for Linux through library simpleaudio
+- Added support for Linux through library simpleaudio (requires libasound2-dev)
 
 # Information below this point is not required for using the shift tone
 
@@ -92,14 +92,17 @@ There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
 - Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous perfect shifts
-- Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation.
+- The supplied gear ratios given by the game may not be correct (fix work in progress)
+- Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation
 - The program assumes the car is driven with the stock Power curve, some upgrades will result in suboptimal shifts:
-  - Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve.
+  - Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve
   - Turbos affect the shape considerably and increase the cost of shifting
   - Upgrades that affect the RPM range of the engine
   - Conversely, upgrades that maintain the same shape are fine: Such as ECU percentage adjustment
-- The default values are arbitrarily chosen and may not suit individual cars or track surface.
+- The default values are arbitrarily chosen and may not suit individual cars or track surface
 - (Script only) The socket is not always closed cleanly for no apparent reason: requiring a new console on most consecutive launches
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
+- Requires at minimum Python 3.10 (statistics linear regression)
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
+
 
