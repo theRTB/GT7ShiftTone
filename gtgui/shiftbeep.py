@@ -43,13 +43,12 @@ from gtgui.fuelstats import GUIFuelStats
 
 # from utility import Variable
 
-
     
 #tkinter GUI wrapper around GTBeep
 class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
     TITLE = "GT7ShiftTone: Dynamic shift tone for Gran Turismo 7"
-    WRITEBACK_VARS = (GenericGUIShiftBeep.WRITEBACK_VARS +
-                      ['stock_curve_toggle', 'bop_curve_toggle'])
+    WRITEBACK_VARS = (GenericGUIShiftBeep.WRITEBACK_VARS + [#'target_ip',
+                      'stock_curve_toggle', 'bop_curve_toggle'])
     
     LOOP_FUNCS = ShiftBeep.LOOP_FUNCS + [
          # 'loop_test_car_changed', #reset if car ordinal/PI changes
