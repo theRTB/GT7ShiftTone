@@ -48,7 +48,7 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 - **Power**: At which RPM peak power is hit.
 - **'vmax'**: The top speed of the car as provided by telemetry. This is in native units of the game (mph or kph) and does not include hybrid power or DRS.
 - **Tach**: The current RPM value as reported by the telemetry. Updates 30 times per second
-- **Car ID**: The internal ID of the car. The RPM/Power/Torque table is saved with this ID as filename. For example, a car with Car ID 432 will have its data saved to _curves\432.tsv_
+- **Car ID**: The internal ID of the car.
 
 ### Per gear:
 
@@ -94,7 +94,7 @@ There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
 - Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous perfect shifts
-- Program can beep on a downshift (fix work in progress)
+- Program can beep on a downshift (fix work in progress)  
 ~~- The supplied gear ratios given by the game may not be correct (fix work in progress)~~
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation
 - The program assumes the car is driven with the stock Power curve, some upgrades will result in suboptimal shifts:
@@ -107,6 +107,7 @@ There is one packet per 16.667 milliseconds, approximately.
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
 - Requires at minimum Python 3.10 (statistics linear regression)
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
+
 
 
 
