@@ -46,6 +46,7 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 - **Revbar**: The range in which the revbar lights up. It begins at 85% and starts blinking at 99% of a predetermined value
   - This is generally equal to the upshift line value in the Transmission tuning page, but there are exceptions.
 - **Power**: At which RPM peak power is hit.
+- **'vmax'**: The top speed of the car as provided by telemetry. This is in native units of the game (mph or kph) and does not include hybrid power or DRS.
 - **Tach**: The current RPM value as reported by the telemetry. Updates 30 times per second
 - **Car ID**: The internal ID of the car. The RPM/Power/Torque table is saved with this ID as filename. For example, a car with Car ID 432 will have its data saved to _curves\432.tsv_
 
@@ -73,16 +74,17 @@ In **Settings**:
 - **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
 - **Dynamic Tone Offset**: Enables or disables the dynamic updating of the tone offset.
 - **Include replays**: Sets the program to function during replays: useful primarily to log shift points in a replay.
+- **Car is stock**: Defaults to off. Assumes the driven car is stock. Do not toggle this if the driven car is tuned.
 
 ## Playstation IP-address
 
 The program will attempt to find an active Playstation console with Gran Turismo 7 active. On Windows, it does this by assuming both the Playstation and the device the code runs on are on the same local network (the most common range of 192.168.x.y).  
-If that fails, you will need to find and manually set your console IP address into the UI:
+If that fails, you will need to find and manually set your console IP address into the config file:
 
 - Find the IP address by going to the PS Settings -> Network -> Connection Status -> View Connection Status -> IPv4 address
-- Press Stop to stop the background loop
-- Enter this IPv4 address into the PS IP entry box then hit Start
-  - After this, GT7ShiftTone will automatically connect to this address and autostart
+- Open _config.json_ in the installation folder and add the IP-adress within the quotation marks in the line with **"target_ip": "",**
+  - For example: _"target_ip": "192.168.1.123",_
+  - This file is generated after starting and exiting the program once
 
 ## Settings are saved to config.json
 
@@ -92,7 +94,8 @@ There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
 - Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous perfect shifts
-- The supplied gear ratios given by the game may not be correct (fix work in progress)
+- Program can beep on a downshift (fix work in progress)
+~~- The supplied gear ratios given by the game may not be correct (fix work in progress)~~
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation
 - The program assumes the car is driven with the stock Power curve, some upgrades will result in suboptimal shifts:
   - Power Restrictor for example affects the shape of the curve: adjustments will not match a saved curve
@@ -104,5 +107,6 @@ There is one packet per 16.667 milliseconds, approximately.
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
 - Requires at minimum Python 3.10 (statistics linear regression)
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
+
 
 
