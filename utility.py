@@ -166,7 +166,7 @@ def calculate_shiftrpm(rpm, power, relratio, do_print=True):
     shiftrpm = round(intersects[-1],0) if len(intersects) > 0 else rpm[-1]
     
     if do_print:
-        print(f"shift rpm {shiftrpm:.0f}, drop to {shiftrpm/relratio:.0f}, "
+        print(f"shift RPM {shiftrpm:.0f}, drop to {shiftrpm/relratio:.0f}, "
               f"drop is {shiftrpm*(1.0 - 1.0/relratio):.0f}")
         if len(intersects) > 1:
             print("Warning: multiple intersects found: graph may be noisy")
