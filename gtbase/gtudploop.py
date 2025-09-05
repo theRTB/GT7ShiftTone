@@ -35,9 +35,9 @@ class GTUDPLoop():
     HEARTBEAT_PORT = 33739
     HEARTBEAT_TIMER = 10 # in seconds
     HEARTBEAT_TIMER_FAST = 1 # in seconds
-    HEARTBEAT_CONTENT = b'A' #default if config does not contain it
+    HEARTBEAT_CONTENT = 'A' #default if config does not contain it
     BROADCAST_ADDRESS = '255.255.255.255'
-    
+
     def __init__(self, config, loop_func=None):
         self.threadPool = ThreadPoolExecutor(max_workers=8,
                                              thread_name_prefix="exec")
@@ -62,17 +62,18 @@ class GTUDPLoop():
 
     def init_socket(self):
         local_ip = self.derive_local_address()
-        print(f'Derived local IP: {local_ip if local_ip else "UNKNOWN, using: ''"}')
-        
+        local_ip_string = local_ip if local_ip else "UNKNOWN, using: ''"
+        print(f'Derived local IP: {local_ip_string}')
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.settimeout(1)
         sock.bind((local_ip, self.RECV_PORT))
         return sock
-        
+
     #Crude implementation of finding a local valid IP address
-    #where it's simpler to assume it's in the most common range: 
+    #where it's simpler to assume it's in the most common range:
     #192.168.0.0/16 with a subnet of /24
     @classmethod
     def derive_local_address(cls, match_ip='192.168'):
@@ -80,16 +81,16 @@ class GTUDPLoop():
         ip = socket.gethostbyname(socket.gethostname())
         if ip[:len(match_ip)] == match_ip:
             return ip
-        
+
         #Method 2:
         ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)]
         for ip in ips:
             if ip[:len(match_ip)] == match_ip:
                 return ip
-        
+
         #No match
         return ''
-    
+
     def loop_get_ps_ip(self):
         print("Entering loop to derive PS IP-address")
         while self.isRunning:
@@ -108,24 +109,24 @@ class GTUDPLoop():
             def starting():
                 print("Starting loop")
                 self.isRunning = True
-                
+
                 #Do global broadcast with fast timer
                 if (broadcast_method :=
                         (self.target_ip in ['', self.BROADCAST_ADDRESS])):
                     print("No PS IP given: Using broadcast method")
                     self.set_target_ip(self.BROADCAST_ADDRESS)
                     self.timer = self.HEARTBEAT_TIMER_FAST
-                
+
                 with self.init_socket() as self.socket:
                     self.maintain_heartbeat()
-                    
+
                     #loop until we receive a packet on RECV_PORT
                     #then reset timer back to default
-                    if broadcast_method: 
+                    if broadcast_method:
                         self.loop_get_ps_ip()  #loops here
                         print(f"Derived PS IP: {self.target_ip}")
-                        self.timer = self.HEARTBEAT_TIMER  
-                        
+                        self.timer = self.HEARTBEAT_TIMER
+
                     self.gtdp_loop(self.loop_func)
             self.threadPool.submit(starting)
         else:
@@ -201,4 +202,3 @@ class GTUDPLoop():
             self.t.cancel() #abort any running timer
         print("Ended timer function for heartbeat")
         self.threadPool.shutdown(wait=True)
-        
