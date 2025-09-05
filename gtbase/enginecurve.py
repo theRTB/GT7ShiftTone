@@ -47,7 +47,7 @@ class EngineCurve(EngineCurve):
         return super().file_exists(gtdp) or exists(filename_stock)
 
     #gtdp is assumed to not be None here because files_exist tests for this
-    def init_from_file(self, gtdp, load_stock=True, *args, **kwargs):
+    def init_from_file(self, gtdp, load_stock=False, *args, **kwargs):
         super().init_from_file(gtdp)
         if self.curve_state:
             return
