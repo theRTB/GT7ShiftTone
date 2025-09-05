@@ -136,14 +136,14 @@ class Gear():
             self.to_next_state()
 
         if self.state.at_least_locked():
-            return
+            return False
 
-        if not (ratio := derive_gearratio(fdp)):
-            return
+        if not (raw_ratio := derive_gearratio(fdp)):
+            return False
 
-        self.ratio_deque.append(ratio)
+        self.ratio_deque.append(raw_ratio)
         if len(self.ratio_deque) < 10:
-            return
+            return False
 
         median = statistics.median(self.ratio_deque)
         variance = statistics.variance(self.ratio_deque)
@@ -155,6 +155,7 @@ class Gear():
             self.to_next_state() #implied from reached to locked
             print(f'LOCKED {self.gear}: {median:.3f}')
             return True
+        return False
 
     def calculate_shiftrpm(self, rpm, power, nextgear):
         if (self.state.at_locked() and nextgear.state.at_least_locked()):
@@ -211,6 +212,6 @@ class Gears():
     def update(self, fdp):
         gear = int(fdp.gear)
         if gear == 0 or gear > MAXGEARS:
-            return
+            return False
         self.highest = max(self.highest, gear)
         return self.gears[gear].update(fdp)
