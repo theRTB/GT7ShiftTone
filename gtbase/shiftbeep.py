@@ -136,18 +136,15 @@ class ShiftBeep(ShiftBeep):
 
     #called when car ordinal changes or data collector finishes a run
     def handle_curve_change(self, gtdp, *args, **kwargs):
-        print("Updating gears")
-        self.gears.update(gtdp)
-
         bop_toggle = self.bop_curve_toggle
         load_stock = (self.stock_curve_toggle.get() or
                       (bop_toggle.get() and bop_toggle.car_in_grouplist(gtdp)))
 
-        # super().handle_curve_change(gtdp, load_stock, *args, **kwargs)
-        super().handle_curve_change(gtdp, *args, **kwargs)
+        print("Updating gears")
+        self.gears.update(gtdp, load_stock)
+
+        super().handle_curve_change(gtdp, load_stock, *args, **kwargs)
         self.speedstats.set_revlimit(self.revlimit.get())
-        # else:
-        #     print("Stock curve toggle or BoP curve toggle forbids loading of curve")
 
     def loop_update_speedstats(self, gtdp):
         if config.speed_stats_active:
@@ -195,7 +192,7 @@ class ShiftBeep(ShiftBeep):
             self.tone_offset.decrement_counter()
             
         if shiftrpm is not None: #gtdp.gear is the upshifted gear, one too high
-            print(f'Speed: {packet.speed*3.6} kph')
+            print(f'Speed at upshift: {packet.speed*3.6:.1f} kph')
             self.history.update(self.debug_target_rpm, shiftrpm, gtdp.gear-1, 
                                 self.tone_offset.get_counter())
             if self.dynamictoneoffset.get():
