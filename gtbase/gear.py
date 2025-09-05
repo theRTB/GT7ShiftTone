@@ -5,6 +5,8 @@ Created on Wed Aug  2 20:46:58 2023
 @author: RTB
 """
 
+import json
+
 from forzabase.gear import Gear, Gears, GearState
 
 #Taken from ForzaShiftTone. GT7 telemetry officially goes up to 8 gears, but
@@ -16,28 +18,27 @@ MAXGEARS = 10
 class GearState(GearState):
     pass
 
+with open('database/stock_ratios.json') as file:
+    raw_ratios = json.load(file)
+    stock_ratios = {int(k):v for k,v in raw_ratios.items()}
+
 #class to hold all variables per individual gear
 class Gear(Gear):
     #return True if we should play gear beep
-    def update(self, gtdp, prevgear):
+    #gtdp currently unused, may be used for drivetrain analysis or gear ratio
+    #derivation
+    def update(self, gtdp, ratio=None): #prevgear):
         if self.state.at_initial():
             self.to_next_state()
 
         if self.state.at_least_locked():
-            return
-        if not (ratio := round(gtdp.gears[self.gear], 3)):
-            return
+            return False
+
+        if ratio is None:
+            return False
         
         self.set_ratio(ratio)
-        
-        #we use a reverse logic here because the gears are locked sequentially
-        #1 is set then 2, then 3, etc
-        #but we need the 'next gear' to get the relative ratio which is not set
-        #yet at that point.
-        if prevgear is not None and prevgear.state.at_least_locked():
-            relratio =  prevgear.get_ratio() / ratio
-            prevgear.set_relratio(relratio)
-            
+
         self.to_next_state() #implied from reached to locked
         print(f'LOCKED {self.gear}: {ratio:.3f}')
         return True
@@ -66,14 +67,21 @@ class Gears(Gears):
     def is_highest(self, gearnr):
         return self.highest == gearnr
 
+    def get_ratios(self, gtdp, load_stock=False):
+        if load_stock and gtdp.car_ordinal in stock_ratios.keys():
+            print("Loaded ratios from file")
+            return stock_ratios[gtdp.car_ordinal]['ratios']
+        print("Using ratios from telemetry")
+        return gtdp.gears[1:]
+
     #call update function of gear 1 to 8. We haven't updated the GUI display
     #because it messes up the available space
-    #add the previous gear for relative ratio calculation
-    def update(self, gtdp):
+    def update(self, gtdp, load_stock=False):
         highest = 0
-        for gear, prevgear in zip(self.gears[1:-2], [None] + self.gears[1:-3]):
-            if gtdp.gears[gear.gear] != 0.000:
-                gear.update(gtdp, prevgear)
+        ratios = self.get_ratios(gtdp, load_stock)
+        for gear, ratio in zip(self.gears[1:-2], ratios):
+            if (round(ratio, 3)) != 0.000:
+                gear.update(gtdp, ratio)
                 highest += 1
         if self.highest is None:
             self.highest = highest
