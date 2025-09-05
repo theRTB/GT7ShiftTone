@@ -162,3 +162,4 @@ cython_debug/
 WebPlotDigitizer-4.7-win32-x64/
 various/
 config.json
+gtgui/fuelstats.py
