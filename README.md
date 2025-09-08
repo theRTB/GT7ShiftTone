@@ -10,14 +10,17 @@
 ## Current release
 
 GT7ShiftTone is being primarily developed for Group 1, 2, 3, 4 and B cars as they tend to run under BoP with fixed settings:
-- This program should work out-of-the-box for supported cars, outside of saying 'Yes' once to the Windows Firewall 
+- This program should work out-of-the-box for supported cars
+  -  The car data will only be loaded if activately racing, not in replays or menus or during race countdown
 - Be aware that false positives exist: not every beep is an upshift.
 
 ### Launch with:
-- GT7ShiftTone 0.51.exe: if you have downloaded the PyInstaller release - **PREVIOUS RELEASE, will be updated soon**
+- GT7ShiftTone-beta2.exe: if you have downloaded the PyInstaller release
+  - Windows Firewall will ask for confirmation for network access
 - gtbeep.py: For Python users  
 
 **Changes:**  
+- Generated pyinstaller executable for Windows
 - Added 300+ stock curves
 - Added toggle in Settings to load stock curves for all cars: Disabled by default
   - Emphasis on car being stock, or else the beep is simply incorrect
@@ -42,7 +45,7 @@ If you choose to not shift and remain above the trigger RPM, the program will no
 
 ### General display values:
 
-- **Revlimit**: The limit on engine RPM by its own power. Revlimit is derived upon finishing a full throttle sweep up to revlimit
+- **Revlimit**: The limit on engine RPM by its own power.
 - **Revbar**: The range in which the revbar lights up. It begins at 85% and starts blinking at 99% of a predetermined value
   - This is generally equal to the upshift line value in the Transmission tuning page, but there are exceptions.
 - **Power**: At which RPM peak power is hit.
@@ -73,8 +76,9 @@ In **Settings**:
 - **Revlimit %**: The respected rev limit in percentage of actual rev limit. This is to create a buffer for transients that could cause the engine to cut out due to hitting actual rev limit. Defaults to 98.0%.
 - **Revlimit ms**: The minimum predicted distance to actual rev limit. This is to create a buffer for fast changes in RPM that would otherwise lead to hitting actual rev limit, such as in first gear. Defaults to 100ms.
 - **Dynamic Tone Offset**: Enables or disables the dynamic updating of the tone offset.
-- **Include replays**: Sets the program to function during replays: useful primarily to log shift points in a replay.
+- **Include replays**: Sets the program to function during replays: useful primarily to log shift points in a replay. Also allows loading of car data when in race menu.
 - **Car is stock**: Defaults to off. Assumes the driven car is stock. Do not toggle this if the driven car is tuned.
+- **Bluetooth keepalive**: Defaults to off. Bluetooth devices tend to go into power saving and not play the beep in time or at all. This attempts to force the connection to stay alive by playing silence in-between.
 
 ## Playstation IP-address
 
@@ -88,12 +92,12 @@ If that fails, you will need to find and manually set your console IP address in
 
 ## Settings are saved to config.json
 
-The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset. The gear ratios are not saved, they are provided by the real time telemetry data.  
+The settings are saved to _config.json_ on exit. This includes Tone offset, Hysteresis, Revlimit %, Revlimit ms, Volume, Dynamic Tone Offset, Window Location.
 Remote telemetry sends data at 60 packets per second. The offset variables (Tone offset, revlimit ms) while defined in milliseconds currently use packet counts in the backend.  
 There is one packet per 16.667 milliseconds, approximately.
 
 ## Notes and known issues
-- Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous perfect shifts
+- Assumptions: Stock or BoP, full throttle, not grip limited, instantaneous shifts
 - Program can beep on a downshift (fix work in progress)  
 ~~- The supplied gear ratios given by the game may not be correct (fix work in progress)~~
 - Gear 9 and 10 are never filled in even if the car has them: Limitation of the telemetry and implementation
@@ -107,6 +111,7 @@ There is one packet per 16.667 milliseconds, approximately.
 - Application will on rare occasions just crash: related to the UI library and cannot be fixed
 - Requires at minimum Python 3.10 (statistics linear regression)
 - This program _'works for me'_. If you wish to run this script and there are issues, please report them.
+
 
 
 
