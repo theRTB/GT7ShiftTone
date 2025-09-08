@@ -13,3 +13,4 @@ python-dateutil>=2.8.2
 six>=1.16.0
 salsa20>=0.3.0
 zombie-imp>=0.0.3
+simpleaudio-312compat>=1.0.4
