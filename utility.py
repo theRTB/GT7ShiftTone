@@ -6,7 +6,7 @@ Created on Wed Sep 13 10:23:57 2023
 """
 #A collection of various utility functions for the rest of the files
 
-#general purpose variable class
+#general purpose variable class with option to reset to initial value
 class Variable(object):
     def __init__(self, defaultvalue=None, *args, **kwargs):
         self.value = defaultvalue
@@ -217,7 +217,7 @@ def simplify_curve(x, y, xmin=None, xmax=None, n=500):
         
     newy = np.interp(newx, x, y, left=starty, right=endy)
 
-    return (newx, newy)
+    return newx, newy
 
 #Derives an rpm/torque curve from an rpm/accel curve up to revlimit along with
 #an array of consecutive velocity/accel points at high speed. The 
@@ -230,7 +230,7 @@ def simplify_curve(x, y, xmin=None, xmax=None, n=500):
 #  anything with this?
 def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None), 
                 accelrun_bounds=(0, None), smoothing='multi_rolling', 
-                accelrun_smooth=[3,21], sort_rpm=True, interval=100,
+                accelrun_smooth=(3,21), sort_rpm=True, interval=100,
                 relative=True):
 
     if smoothing == 'rolling':
@@ -252,6 +252,9 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
         rpmmax = accelrun.revlimit
         rpm, torque = simplify_curve(rpm_shape, torque_shape, 
                                      xmax=rpmmax, n=interval)
+    else:
+        rpm = rpm_shape
+        torque = torque_shape
     
     power = torque * rpm
     
@@ -259,7 +262,7 @@ def np_drag_fit(accelrun, dragrun, dragrun_bounds=(10, None),
         torque = 100*torque/max(torque)
         power = 100*power/max(power)
     
-    return (np.array(rpm), torque, power)
+    return np.array(rpm), torque, power
 
 import csv
 from os.path import exists
