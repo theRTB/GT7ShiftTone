@@ -54,10 +54,11 @@ from utility import Variable
 class GenericGUIShiftBeep():
     TITLE = "ForzahiftTone: Dynamic shift tone for the Forza series"
     WIDTH, HEIGHT = 815, 239 #most recent dump of size at 150% scaling
-    WRITEBACK_VARS = ['revlimit_percent', 'revlimit_offset', #'tone_offset',
-                      'hysteresis_percent', 'volume', 
-                      'window_x', 'window_y', 'dynamictoneoffset',
-                      'includereplay', 'window_x', 'window_y']
+    WRITEBACK_VARS = (ShiftBeep.WRITEBACK_VARS +
+                      ['revlimit_percent', 'revlimit_offset', 'tone_offset',
+                       'hysteresis_percent', 'volume',
+                       'window_x', 'window_y', 'dynamictoneoffset',
+                       'includereplay', 'bluetooth_keepalive'])
     
     def __init__(self):
         super().__init__()
@@ -114,7 +115,8 @@ class GenericGUIShiftBeep():
         self.tone_offset = GUIToneOffset(root, config)
         
         self.rpm = GUIRPM(root, hysteresis_percent=self.hysteresis_percent)
-        self.volume = GUIVolume(root, config)
+        self.volume = GUIVolume(root, config,
+                            bluetooth_keepalive_var=self.bluetooth_keepalive)
         self.peakpower = GUIPeakPower(root)
         self.car_ordinal = GUICarOrdinal(root)
         

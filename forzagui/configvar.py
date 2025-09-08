@@ -138,6 +138,9 @@ class GUIIncludeReplay(GUICheckButton):
 class GUIDynamicToneOffsetToggle(GUICheckButton):
     TEXT = 'Dynamic tone offset'
 
+class GUIBluetoothKeepaliveToggle(GUICheckButton):
+    TEXT = 'Bluetooth keepalive'
+
 #TODO: see if removing tone_offset_var=self is possible
 #we only need .get and .set, which are from Variable in the end
 class GUIToneOffset(GUIConfigVariable, DynamicToneOffset):
@@ -227,8 +230,8 @@ class GUIPeakPower():
 #this class depends on how the volume steps in config are defined
 class GUIVolume(Volume):
     MIN, MAX, STEP = 0, 100, 25
-    def __init__(self, root, config):
-        super().__init__(config)
+    def __init__(self, root, config, bluetooth_keepalive_var):
+        super().__init__(config, bluetooth_keepalive_var)
         frame = tkinter.Frame(root)
         self.frame = frame
         self.label = tkinter.Label(frame, text='Volume')
@@ -269,11 +272,13 @@ class GUIVolume(Volume):
 
 class GUIConfigWindow():
     TITLE='ForzaShiftTone: Settings'
-    CLASSES = { 'hysteresis_percent': GUIHysteresisPercent, 
-                'revlimit_percent':   GUIRevlimitPercent,
-                'revlimit_offset':    GUIRevlimitOffset,
-                'dynamictoneoffset':  GUIDynamicToneOffsetToggle,
-                'includereplay':      GUIIncludeReplay}
+    CLASSES = { 'hysteresis_percent':  GUIHysteresisPercent,
+                'revlimit_percent':    GUIRevlimitPercent,
+                'revlimit_offset':     GUIRevlimitOffset,
+                'dynamictoneoffset':   GUIDynamicToneOffsetToggle,
+                'includereplay':       GUIIncludeReplay,
+                'bluetooth_keepalive': GUIBluetoothKeepaliveToggle
+              }
     
     def __init__(self, root, config, adjustables):
         self.root = root

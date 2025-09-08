@@ -20,8 +20,9 @@ from forzabase.gear import Gears, MAXGEARS
 from forzabase.enginecurve import EngineCurve
 # from forzabase.shiftdump import ShiftDump
 from forzabase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
-                                 RevlimitPercent, RevlimitOffset, ToneOffset, 
-                                 IncludeReplay, Volume)
+                                 RevlimitPercent, RevlimitOffset, ToneOffset,
+                                 IncludeReplay, Volume,
+                                 BluetoothKeepaliveToggle)
 from forzabase.lookahead import Lookahead
 from forzabase.datacollector import DataCollector
 
@@ -52,7 +53,8 @@ class ShiftBeep():
          # 'loop_shiftdump',        #dump a table when a shift happens
          'debug_log_full_shiftdata'             
             ]
-    
+    WRITEBACK_VARS = ['tone_offset']
+
     def __init__(self):
         self.init_vars()     
         self.loop.firststart() #trigger start of loop
@@ -72,11 +74,13 @@ class ShiftBeep():
         self.revlimit_offset = RevlimitOffset(config)
         self.dynamictoneoffset = DynamicToneOffsetToggle(config)
         self.includereplay = IncludeReplay(config)
+        self.bluetooth_keepalive = BluetoothKeepaliveToggle(config)
         
         # self.shiftdump = ShiftDump(self.lookahead)
         
         self.rpm = RPM(hysteresis_percent=self.hysteresis_percent)
-        self.volume = Volume(config)
+        self.volume = Volume(config,
+                             bluetooth_keepalive_var=self.bluetooth_keepalive)
         
         self.we_beeped = 0
         self.beep_counter = 0

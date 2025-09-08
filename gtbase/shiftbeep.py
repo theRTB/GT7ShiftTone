@@ -21,7 +21,7 @@ from gtbase.enginecurve import EngineCurve
 from gtbase.configvar import (HysteresisPercent, DynamicToneOffsetToggle,
                               RevlimitPercent, RevlimitOffset, ToneOffset, 
                               IncludeReplay, Volume, StockCurveToggle,
-                              BoPCurveToggle)
+                              BoPCurveToggle, BluetoothKeepaliveToggle)
 from gtbase.lookahead import Lookahead
 from gtbase.datacollector import DataCollector
 from gtbase.speedstats import SpeedStats
@@ -109,9 +109,11 @@ class ShiftBeep(ShiftBeep):
 
         self.stock_curve_toggle = StockCurveToggle(config)
         self.bop_curve_toggle = BoPCurveToggle(config)
+        self.bluetooth_keepalive = BluetoothKeepaliveToggle(config)
         
         self.rpm = RPM(hysteresis_percent=self.hysteresis_percent)
-        self.volume = Volume(config)
+        self.volume = Volume(config,
+                             bluetooth_keepalive_var=self.bluetooth_keepalive)
         
         self.we_beeped = 0
         self.beep_counter = 0

@@ -94,7 +94,8 @@ class GUIShiftBeep(GenericGUIShiftBeep, ShiftBeep):
         self.tone_offset = GUIToneOffset(root, config)
         
         self.rpm = GUIRPM(root, hysteresis_percent=self.hysteresis_percent)
-        self.volume = GUIVolume(root, config)
+        self.volume = GUIVolume(root, config,
+                            bluetooth_keepalive_var=self.bluetooth_keepalive)
         self.peakpower = GUIPeakPower(root)
         self.revbardata = GUIRevbarData(root)
         self.vmaxdata = GUIVMaxData(root)

@@ -11,8 +11,8 @@ from forzagui.configvar import ( GUIRevlimitOffset, GUIRevlimitPercent,
                                  GUIHysteresisPercent, GUICheckButton, 
                                  GUIIncludeReplay, GUIDynamicToneOffsetToggle,
                                  GUIToneOffset, GUIRevlimit, GUIPeakPower, 
-                                 GUIVolume, GUIConfigWindow, GUIConfigButton,
-                                 GUIConfigWindow)
+                                 GUIVolume, GUIConfigButton,
+                                 GUIConfigWindow, GUIBluetoothKeepaliveToggle)
 
 #The in-game revbar scales off the revbar variable in telemetry:
 #Starts at 85% and starts blinking at 99%
@@ -104,6 +104,9 @@ class GUIIncludeReplay(GUIIncludeReplay):
 class GUIDynamicToneOffsetToggle(GUIDynamicToneOffsetToggle):
     pass
 
+class GUIBluetoothKeepaliveToggle(GUIBluetoothKeepaliveToggle):
+    pass
+
 class GUIToneOffset(GUIToneOffset):
     pass
 
@@ -134,7 +137,8 @@ class GUIConfigWindow(GUIConfigWindow):
                 'dynamictoneoffset':  GUIDynamicToneOffsetToggle,
                 'includereplay':      GUIIncludeReplay,
                 'stock_curve_toggle': GUIStockCurveToggle,
-                }
+                'bluetooth_keepalive': GUIBluetoothKeepaliveToggle,
+               }
 
 #enable button once we have a settings window
 #adjustables is an array of Variables we can display to adjust

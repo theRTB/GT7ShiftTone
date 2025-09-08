@@ -6,9 +6,10 @@ Created on Wed Aug  2 20:54:19 2023
 """
 
 from utility import Variable
-from forzabase.configvar import (ToneOffset, Volume, RevlimitOffset, 
-                                 RevlimitPercent, HysteresisPercent, 
-                                 IncludeReplay, DynamicToneOffsetToggle)
+from forzabase.configvar import (ToneOffset, Volume, RevlimitOffset,
+                                 RevlimitPercent, HysteresisPercent,
+                                 IncludeReplay, DynamicToneOffsetToggle,
+                                 BluetoothKeepaliveToggle)
 from gtbase.carordinal import GroupData
 
 class ToneOffset(ToneOffset):
@@ -31,6 +32,9 @@ class IncludeReplay(IncludeReplay):
         return (self.get() or gtdp.cars_on_track)
 
 class DynamicToneOffsetToggle(DynamicToneOffsetToggle):
+    pass
+
+class BluetoothKeepaliveToggle(BluetoothKeepaliveToggle):
     pass
 
 class StockCurveToggle(Variable):
